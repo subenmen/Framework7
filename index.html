@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUBEY - Logo Animasyonu</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-wrapper">
+            <!-- K harfi özel tasarım -->
+            <svg id="logo-k" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <path id="k-vertical" d="M 30 20 L 30 100" stroke="#00D9FF" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path id="k-diagonal-1" d="M 30 60 L 80 20" stroke="#00D9FF" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path id="k-diagonal-2" d="M 30 60 L 80 100" stroke="#00D9FF" stroke-width="8" fill="none" stroke-linecap="round"/>
+                
+                <!-- Dekoratif daireler -->
+                <circle id="circle-1" cx="30" cy="60" r="6" fill="#FF6B6B"/>
+                <circle id="circle-2" cx="80" cy="20" r="6" fill="#4ECDC4"/>
+                <circle id="circle-3" cx="80" cy="100" r="6" fill="#FFE66D"/>
+            </svg>
+            
+            <!-- Firma ismi -->
+            <div class="company-name">
+                <span class="letter">K</span>
+                <span class="letter">U</span>
+                <span class="letter">B</span>
+                <span class="letter">E</span>
+                <span class="letter">Y</span>
+            </div>
+            
+            <!-- Alt başlık -->
+            <div class="tagline">
+                <span class="tagline-word">Software</span>
+                <span class="tagline-word">Solutions</span>
+            </div>
+            
+            <!-- Partiküller -->
+            <div class="particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+        </div>
+        
+        <!-- Replay butonu -->
+        <button id="replay-btn" class="replay-btn">🔄 Tekrar Oynat</button>
+    </div>
+
+    <!-- Anime.js kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="logo-animation.js"></script>
+</body>
+</html>
