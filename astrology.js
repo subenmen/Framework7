@@ -74,13 +74,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Örnek harita yükle
 function loadExampleChart() {
+    const citySelect = document.getElementById('city');
+    const selectedOption = citySelect.options[citySelect.selectedIndex];
+    
     const formData = {
-        name: document.getElementById('name').value || 'Örnek Kişi',
+        name: selectedOption.text,
         birthDate: document.getElementById('birth-date').value,
         birthTime: document.getElementById('birth-time').value,
-        city: document.getElementById('city').value,
-        latitude: parseFloat(document.getElementById('latitude').value),
-        longitude: parseFloat(document.getElementById('longitude').value)
+        city: selectedOption.text,
+        latitude: parseFloat(selectedOption.dataset.lat),
+        longitude: parseFloat(selectedOption.dataset.lon)
     };
     
     calculateChart(formData);
@@ -88,13 +91,16 @@ function loadExampleChart() {
 
 // Harita oluştur
 function generateChart() {
+    const citySelect = document.getElementById('city');
+    const selectedOption = citySelect.options[citySelect.selectedIndex];
+    
     const formData = {
-        name: document.getElementById('name').value || 'Doğum Haritası',
+        name: selectedOption.text,
         birthDate: document.getElementById('birth-date').value,
         birthTime: document.getElementById('birth-time').value,
-        city: document.getElementById('city').value,
-        latitude: parseFloat(document.getElementById('latitude').value),
-        longitude: parseFloat(document.getElementById('longitude').value)
+        city: selectedOption.text,
+        latitude: parseFloat(selectedOption.dataset.lat),
+        longitude: parseFloat(selectedOption.dataset.lon)
     };
     
     if (!formData.birthDate || !formData.birthTime) {

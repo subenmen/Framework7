@@ -48,28 +48,37 @@
             <h3>📋 Doğum Bilgileri</h3>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Ad Soyad</label>
-                    <input type="text" id="name" placeholder="Örn: Ahmet Yılmaz">
-                </div>
-                <div class="form-group">
-                    <label>Doğum Tarihi</label>
+                    <label>📅 Doğum Tarihi</label>
                     <input type="date" id="birth-date" value="1993-01-31">
                 </div>
                 <div class="form-group">
-                    <label>Doğum Saati</label>
+                    <label>🕐 Doğum Saati</label>
                     <input type="time" id="birth-time" value="15:00">
                 </div>
                 <div class="form-group">
-                    <label>Şehir</label>
-                    <input type="text" id="city" placeholder="Örn: Ankara" value="Ankara">
-                </div>
-                <div class="form-group">
-                    <label>Enlem</label>
-                    <input type="text" id="latitude" placeholder="39.55" value="39.55">
-                </div>
-                <div class="form-group">
-                    <label>Boylam</label>
-                    <input type="text" id="longitude" placeholder="32.51" value="32.51">
+                    <label>📍 Doğum Yeri</label>
+                    <select id="city">
+                        <option value="ankara" data-lat="39.93" data-lon="32.85">Ankara</option>
+                        <option value="istanbul" data-lat="41.01" data-lon="28.98">İstanbul</option>
+                        <option value="izmir" data-lat="38.42" data-lon="27.14">İzmir</option>
+                        <option value="antalya" data-lat="36.89" data-lon="30.70">Antalya</option>
+                        <option value="bursa" data-lat="40.19" data-lon="29.06">Bursa</option>
+                        <option value="adana" data-lat="37.00" data-lon="35.32">Adana</option>
+                        <option value="gaziantep" data-lat="37.07" data-lon="37.38">Gaziantep</option>
+                        <option value="konya" data-lat="37.87" data-lon="32.48">Konya</option>
+                        <option value="kayseri" data-lat="38.73" data-lon="35.48">Kayseri</option>
+                        <option value="mersin" data-lat="36.81" data-lon="34.64">Mersin</option>
+                        <option value="eskisehir" data-lat="39.78" data-lon="30.52">Eskişehir</option>
+                        <option value="diyarbakir" data-lat="37.91" data-lon="40.24">Diyarbakır</option>
+                        <option value="samsun" data-lat="41.29" data-lon="36.33">Samsun</option>
+                        <option value="denizli" data-lat="37.77" data-lon="29.09">Denizli</option>
+                        <option value="trabzon" data-lat="41.00" data-lon="39.72">Trabzon</option>
+                        <option value="malatya" data-lat="38.35" data-lon="38.31">Malatya</option>
+                        <option value="erzurum" data-lat="39.90" data-lon="41.27">Erzurum</option>
+                        <option value="van" data-lat="38.49" data-lon="43.38">Van</option>
+                        <option value="batman" data-lat="37.89" data-lon="41.13">Batman</option>
+                        <option value="elazig" data-lat="38.68" data-lon="39.23">Elazığ</option>
+                    </select>
                 </div>
             </div>
             <button id="generate-chart" class="generate-btn">✨ Harita Oluştur</button>
