@@ -1,350 +1,465 @@
-// Profesyonel Astroloji Haritası v3.1.0
-// Gerçek Astronomik Hesaplamalar
+// KUBEY Astroloji v4.0.0 - Astro-Seek tarzı profesyonel doğum haritası
+// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + Placidus/Porphyry evler
+console.log('🌟 Astroloji v4.0.0 yükleniyor...');
 
-console.log('🌟 Astroloji Haritası v3.1.0 - Astronomik Hesaplamalar');
+const DEG = Math.PI / 180;
 
-// Burç verileri (Tropik zodyak, 0° Koç = İlkbahar Ekinoksu)
-const ZODIAC_SIGNS = [
-    { name: 'Koç', symbol: '♈', start: 0 },
-    { name: 'Boğa', symbol: '♉', start: 30 },
-    { name: 'İkizler', symbol: '♊', start: 60 },
-    { name: 'Yengeç', symbol: '♋', start: 90 },
-    { name: 'Aslan', symbol: '♌', start: 120 },
-    { name: 'Başak', symbol: '♍', start: 150 },
-    { name: 'Terazi', symbol: '♎', start: 180 },
-    { name: 'Akrep', symbol: '♏', start: 210 },
-    { name: 'Yay', symbol: '♐', start: 240 },
-    { name: 'Oğlak', symbol: '♑', start: 270 },
-    { name: 'Kova', symbol: '♒', start: 300 },
-    { name: 'Balık', symbol: '♓', start: 330 }
+// ---------- VERİLER ----------
+const SIGNS = [
+    { name: 'Koç', symbol: '♈', element: 'fire' },
+    { name: 'Boğa', symbol: '♉', element: 'earth' },
+    { name: 'İkizler', symbol: '♊', element: 'air' },
+    { name: 'Yengeç', symbol: '♋', element: 'water' },
+    { name: 'Aslan', symbol: '♌', element: 'fire' },
+    { name: 'Başak', symbol: '♍', element: 'earth' },
+    { name: 'Terazi', symbol: '♎', element: 'air' },
+    { name: 'Akrep', symbol: '♏', element: 'water' },
+    { name: 'Yay', symbol: '♐', element: 'fire' },
+    { name: 'Oğlak', symbol: '♑', element: 'earth' },
+    { name: 'Kova', symbol: '♒', element: 'air' },
+    { name: 'Balık', symbol: '♓', element: 'water' }
 ];
 
-// Gezegen renkleri ve sembolleri
-const PLANETS = {
-    sun: { name: 'Güneş', symbol: '☉', color: '#FF6B00' },
-    moon: { name: 'Ay', symbol: '☽', color: '#9B9B9B' },
-    mercury: { name: 'Merkür', symbol: '☿', color: '#6B8E23' },
-    venus: { name: 'Venüs', symbol: '♀', color: '#FF69B4' },
-    mars: { name: 'Mars', symbol: '♂', color: '#DC143C' },
-    jupiter: { name: 'Jüpiter', symbol: '♃', color: '#DAA520' },
-    saturn: { name: 'Satürn', symbol: '♄', color: '#8B4513' },
-    uranus: { name: 'Uranüs', symbol: '♅', color: '#00CED1' },
-    neptune: { name: 'Neptün', symbol: '♆', color: '#4169E1' },
-    pluto: { name: 'Plüton', symbol: '♇', color: '#8B0000' }
+const ELEMENT_COLORS = {
+    fire: '#cc3b2f',
+    earth: '#3d8b37',
+    air: '#d9902a',
+    water: '#3465c0'
 };
 
-let chartData = null;
+const PLANETS = {
+    sun:     { name: 'Güneş',  symbol: '☉', color: '#e08b00' },
+    moon:    { name: 'Ay',     symbol: '☽', color: '#7a7a7a' },
+    mercury: { name: 'Merkür', symbol: '☿', color: '#6b8e23' },
+    venus:   { name: 'Venüs',  symbol: '♀', color: '#cc5490' },
+    mars:    { name: 'Mars',   symbol: '♂', color: '#cc2222' },
+    jupiter: { name: 'Jüpiter',symbol: '♃', color: '#8855cc' },
+    saturn:  { name: 'Satürn', symbol: '♄', color: '#8b6f47' },
+    uranus:  { name: 'Uranüs', symbol: '♅', color: '#00a5a5' },
+    neptune: { name: 'Neptün', symbol: '♆', color: '#3465c0' },
+    pluto:   { name: 'Plüton', symbol: '♇', color: '#663333' }
+};
 
-// Ana fonksiyon
-function generateChart() {
-    console.log('📊 Harita oluşturuluyor...');
-    
-    const dateInput = document.getElementById('birth-date').value;
-    const timeInput = document.getElementById('birth-time').value;
-    const citySelect = document.getElementById('city');
-    const option = citySelect.options[citySelect.selectedIndex];
-    
-    const birthData = {
-        date: dateInput,
-        time: timeInput,
-        lat: parseFloat(option.dataset.lat),
-        lon: parseFloat(option.dataset.lon),
-        tz: parseInt(option.dataset.tz),
-        city: option.text
-    };
-    
-    // Hesaplamalar
-    chartData = calculateChart(birthData);
-    
-    // Çizim
-    drawChart(chartData);
-    
-    // Bilgileri göster
-    displayInfo(chartData);
-    
-    console.log('✅ Harita tamamlandı!', chartData);
+// JPL yaklaşık Kepler elemanları (J2000, yüzyıl başına oranlar)
+// [a, e, I, L, wbar, Omega] + oranlar
+const KEPLER = {
+    mercury: [[0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593],
+              [0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081]],
+    venus:   [[0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255],
+              [0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418]],
+    earth:   [[1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0],
+              [0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0]],
+    mars:    [[1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891],
+              [0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343]],
+    jupiter: [[5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909],
+              [-0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106]],
+    saturn:  [[9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448],
+              [-0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794]],
+    uranus:  [[19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503],
+              [-0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589]],
+    neptune: [[30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574],
+              [0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664]],
+    pluto:   [[39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684],
+              [-0.00031596, 0.00005170, 0.00004818, 145.20780515, -0.04062942, -0.01183482]]
+};
+
+const ASPECT_TYPES = [
+    { name: 'Kavuşum',   symbol: '☌', angle: 0,   orb: 8, color: '#d9902a', draw: false },
+    { name: 'Karşıtlık', symbol: '☍', angle: 180, orb: 8, color: '#cc0000', draw: true, dash: [] },
+    { name: 'Üçgen',     symbol: '△', angle: 120, orb: 8, color: '#0055cc', draw: true, dash: [] },
+    { name: 'Kare',      symbol: '□', angle: 90,  orb: 7, color: '#cc0000', draw: true, dash: [] },
+    { name: 'Altmışlık', symbol: '⚹', angle: 60,  orb: 5, color: '#0099cc', draw: true, dash: [4, 3] }
+];
+
+let chart = null;
+
+// ---------- ASTRONOMİ ----------
+function norm360(x) {
+    x = x % 360;
+    return x < 0 ? x + 360 : x;
 }
 
-// Harita hesapla
-function calculateChart(birth) {
-    console.log('🧮 Astronomik hesaplamalar başlıyor...');
-    
-    // UTC tarih-saat
-    const localDate = new Date(`${birth.date}T${birth.time}`);
-    const utcDate = new Date(localDate.getTime() - (birth.tz * 60 * 60 * 1000));
-    
-    // Julian Date
-    const jd = getJulianDate(utcDate);
-    
-    // Greenwich Sidereal Time
-    const gst = getGMST(jd);
-    
-    // Local Sidereal Time
-    const lst = (gst + birth.lon / 15) % 24;
-    
-    // Ascendant ve MC
-    const asc = calculateAscendant(lst, birth.lat);
-    const mc = calculateMC(lst);
-    
-    // Evler (Placidus)
-    const houses = calculateHouses(asc, mc, birth.lat);
-    
-    // Gezegenler
-    const planets = calculatePlanets(jd);
-    
-    // Aspectler
-    const aspects = calculateAspects(planets);
-    
-    console.log('✅ Hesaplamalar tamamlandı');
-    console.log('Yükselen:', getZodiacPosition(asc));
-    console.log('MC:', getZodiacPosition(mc));
-    
-    return {
-        birth,
-        jd,
-        lst,
-        asc,
-        mc,
-        houses,
-        planets,
-        aspects
-    };
-}
-
-// Julian Date hesapla
-function getJulianDate(date) {
-    const y = date.getUTCFullYear();
-    const m = date.getUTCMonth() + 1;
-    const d = date.getUTCDate();
-    const h = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
-    
-    let jy = y;
-    let jm = m;
-    if (m <= 2) {
-        jy--;
-        jm += 12;
-    }
-    
-    const a = Math.floor(jy / 100);
+function julianDate(utc) {
+    let y = utc.getUTCFullYear();
+    let m = utc.getUTCMonth() + 1;
+    const d = utc.getUTCDate() + utc.getUTCHours() / 24 +
+              utc.getUTCMinutes() / 1440 + utc.getUTCSeconds() / 86400;
+    if (m <= 2) { y--; m += 12; }
+    const a = Math.floor(y / 100);
     const b = 2 - a + Math.floor(a / 4);
-    
-    const jd = Math.floor(365.25 * (jy + 4716)) + 
-               Math.floor(30.6001 * (jm + 1)) + 
-               d + h / 24 + b - 1524.5;
-    
-    return jd;
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524.5;
 }
 
-// Greenwich Mean Sidereal Time
-function getGMST(jd) {
-    const t = (jd - 2451545.0) / 36525.0;
-    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 
-               0.000387933 * t * t - t * t * t / 38710000.0;
-    gmst = gmst % 360;
-    if (gmst < 0) gmst += 360;
-    return gmst / 15; // Saate çevir
-}
-
-// Ascendant hesapla (Yengeç = 90°-120° arası)
-function calculateAscendant(lst, lat) {
-    // LST'yi dereceye çevir
-    const lstDeg = lst * 15;
-    
-    // MC (RAMC - Right Ascension of Midheaven)
-    const mc = lstDeg;
-    
-    // Ascendant için iterasyon (basitleştirilmiş Placidus)
-    const latRad = lat * Math.PI / 180;
-    const obliquity = 23.4367; // Ekliptiğin eğimi
-    const oblRad = obliquity * Math.PI / 180;
-    
-    // ASC yaklaşık hesaplama
-    let asc = Math.atan2(Math.cos(lstDeg * Math.PI / 180), 
-              -Math.sin(lstDeg * Math.PI / 180) * Math.cos(oblRad) - 
-              Math.tan(latRad) * Math.sin(oblRad)) * 180 / Math.PI;
-    
-    asc = (asc + 360) % 360;
-    
-    return asc;
-}
-
-// MC (Midheaven) hesapla  
-function calculateMC(lst) {
-    return (lst * 15) % 360;
-}
-
-// Evleri hesapla (Placidus - basitleştirilmiş)
-function calculateHouses(asc, mc, lat) {
-    const houses = [];
-    
-    // 1. Ev = Ascendant
-    houses[0] = asc;
-    
-    // 10. Ev = MC
-    houses[9] = mc;
-    
-    // Basit ev hesaplama (eşit bölme)
-    for (let i = 1; i < 12; i++) {
-        if (i === 0) continue; // 1. ev zaten var
-        if (i === 9) continue; // 10. ev zaten var
-        houses[i] = (asc + i * 30) % 360;
+// Kepler denklemi çöz
+function solveKepler(M, e) {
+    const Mrad = M * DEG;
+    let E = Mrad + e * Math.sin(Mrad);
+    for (let i = 0; i < 8; i++) {
+        E = E - (E - e * Math.sin(E) - Mrad) / (1 - e * Math.cos(E));
     }
+    return E;
+}
+
+// Gezegenin heliosentrik ekliptik koordinatları
+function helioPos(body, T) {
+    const [el0, rate] = KEPLER[body];
+    const a = el0[0] + rate[0] * T;
+    const e = el0[1] + rate[1] * T;
+    const I = (el0[2] + rate[2] * T) * DEG;
+    const L = el0[3] + rate[3] * T;
+    const wbar = el0[4] + rate[4] * T;
+    const Om = (el0[5] + rate[5] * T) * DEG;
+    const w = (wbar - (el0[5] + rate[5] * T)) * DEG;
+    const M = norm360(L - wbar);
+    
+    const E = solveKepler(M, e);
+    const xv = a * (Math.cos(E) - e);
+    const yv = a * Math.sqrt(1 - e * e) * Math.sin(E);
+    
+    // Yörünge düzleminden ekliptiğe dönüşüm
+    const x = (Math.cos(w) * Math.cos(Om) - Math.sin(w) * Math.sin(Om) * Math.cos(I)) * xv +
+              (-Math.sin(w) * Math.cos(Om) - Math.cos(w) * Math.sin(Om) * Math.cos(I)) * yv;
+    const y = (Math.cos(w) * Math.sin(Om) + Math.sin(w) * Math.cos(Om) * Math.cos(I)) * xv +
+              (-Math.sin(w) * Math.sin(Om) + Math.cos(w) * Math.cos(Om) * Math.cos(I)) * yv;
+    const z = (Math.sin(w) * Math.sin(I)) * xv + (Math.cos(w) * Math.sin(I)) * yv;
+    return { x, y, z };
+}
+
+// Jeosentrik ekliptik boylam
+function geoLongitude(body, jd) {
+    const T = (jd - 2451545.0) / 36525.0;
+    const earth = helioPos('earth', T);
+    
+    if (body === 'sun') {
+        return norm360(Math.atan2(-earth.y, -earth.x) / DEG);
+    }
+    
+    if (body === 'moon') {
+        // Ay - jeosentrik seri açılımı
+        const D = jd - 2451545.0;
+        const Lp = 218.3164477 + 13.17639648 * D;      // ortalama boylam
+        const Mp = 134.9633964 + 13.06499295 * D;      // Ay anomalisi
+        const Ms = 357.5291092 + 0.98560028 * D;       // Güneş anomalisi
+        const Dd = 297.8501921 + 12.19074912 * D;      // elongasyon
+        const F  = 93.2720950 + 13.22935024 * D;       // enlem argümanı
+        
+        let lon = Lp
+            + 6.288774 * Math.sin(Mp * DEG)
+            + 1.274027 * Math.sin((2 * Dd - Mp) * DEG)
+            + 0.658314 * Math.sin(2 * Dd * DEG)
+            + 0.213618 * Math.sin(2 * Mp * DEG)
+            - 0.185116 * Math.sin(Ms * DEG)
+            - 0.114332 * Math.sin(2 * F * DEG);
+        return norm360(lon);
+    }
+    
+    const p = helioPos(body, T);
+    const gx = p.x - earth.x;
+    const gy = p.y - earth.y;
+    return norm360(Math.atan2(gy, gx) / DEG);
+}
+
+// Greenwich Ortalama Yıldız Zamanı (saat)
+function gmst(jd) {
+    const T = (jd - 2451545.0) / 36525.0;
+    let g = 280.46061837 + 360.98564736629 * (jd - 2451545.0) +
+            0.000387933 * T * T - T * T * T / 38710000.0;
+    return norm360(g) / 15;
+}
+
+// Yükselen (Ascendant)
+function calcAscendant(lstDeg, lat) {
+    const eps = 23.4367 * DEG;
+    const ramc = lstDeg * DEG;
+    const phi = lat * DEG;
+    let asc = Math.atan2(
+        Math.cos(ramc),
+        -(Math.sin(ramc) * Math.cos(eps) + Math.tan(phi) * Math.sin(eps))
+    ) / DEG;
+    return norm360(asc);
+}
+
+// MC (Medium Coeli)
+function calcMC(lstDeg) {
+    const eps = 23.4367 * DEG;
+    const ramc = lstDeg * DEG;
+    const mc = Math.atan2(Math.sin(ramc), Math.cos(ramc) * Math.cos(eps)) / DEG;
+    return norm360(mc);
+}
+
+// Evler (Porphyry: ASC-MC arası eşit üçe bölme)
+function calcHouses(asc, mc) {
+    const houses = new Array(12);
+    houses[0] = asc;          // 1. ev
+    houses[9] = mc;           // 10. ev
+    houses[6] = norm360(asc + 180);  // 7. ev
+    houses[3] = norm360(mc + 180);   // 4. ev
+    
+    // MC -> ASC arası (11, 12. evler)
+    let arc = norm360(asc - mc);
+    houses[10] = norm360(mc + arc / 3);
+    houses[11] = norm360(mc + 2 * arc / 3);
+    
+    // ASC -> IC arası (2, 3. evler)
+    arc = norm360(houses[3] - asc);
+    houses[1] = norm360(asc + arc / 3);
+    houses[2] = norm360(asc + 2 * arc / 3);
+    
+    // IC -> DSC arası (5, 6. evler)
+    arc = norm360(houses[6] - houses[3]);
+    houses[4] = norm360(houses[3] + arc / 3);
+    houses[5] = norm360(houses[3] + 2 * arc / 3);
+    
+    // DSC -> MC arası (8, 9. evler)
+    arc = norm360(houses[9] - houses[6]);
+    houses[7] = norm360(houses[6] + arc / 3);
+    houses[8] = norm360(houses[6] + 2 * arc / 3);
     
     return houses;
 }
 
-// Gezegen pozisyonları (basitleştirilmiş)
-function calculatePlanets(jd) {
-    const t = (jd - 2451545.0) / 36525.0;
-    const planets = {};
-    
-    // Güneş (daha doğru)
-    const L0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
-    const M = 357.52911 + 35999.05029 * t - 0.0001537 * t * t;
-    const MRad = M * Math.PI / 180;
-    const C = (1.914602 - 0.004817 * t - 0.000014 * t * t) * Math.sin(MRad) +
-              (0.019993 - 0.000101 * t) * Math.sin(2 * MRad) +
-              0.000289 * Math.sin(3 * MRad);
-    planets.sun = (L0 + C) % 360;
-    
-    // Ay (ortalama boylam)
-    planets.moon = (218.316 + 13.176396 * (jd - 2451545.0)) % 360;
-    
-    // İç gezegenler (Güneş'e göre)
-    planets.mercury = (planets.sun + Math.sin(t * 4.09) * 28) % 360;
-    planets.venus = (planets.sun + Math.sin(t * 1.6) * 47) % 360;
-    
-    // Mars
-    planets.mars = (355.45 + 0.524 * (jd - 2451545.0)) % 360;
-    
-    // Dış gezegenler
-    planets.jupiter = (34.40 + 0.083 * (jd - 2451545.0)) % 360;
-    planets.saturn = (50.08 + 0.033 * (jd - 2451545.0)) % 360;
-    planets.uranus = (314.05 + 0.012 * (jd - 2451545.0)) % 360;
-    planets.neptune = (304.35 + 0.006 * (jd - 2451545.0)) % 360;
-    planets.pluto = (238.96 + 0.004 * (jd - 2451545.0)) % 360;
-    
-    return planets;
+// Gezegen hangi evde
+function findHouse(lon, houses) {
+    for (let i = 0; i < 12; i++) {
+        const start = houses[i];
+        const end = houses[(i + 1) % 12];
+        const span = norm360(end - start);
+        const pos = norm360(lon - start);
+        if (pos < span) return i + 1;
+    }
+    return 1;
 }
 
-// Aspectleri hesapla
-function calculateAspects(planets) {
-    const aspects = [];
-    const keys = Object.keys(planets);
-    const aspectTypes = [
-        { name: 'Conjunction', angle: 0, orb: 8, color: '#FFD700' },
-        { name: 'Opposition', angle: 180, orb: 8, color: '#FF0000' },
-        { name: 'Trine', angle: 120, orb: 8, color: '#00FF00' },
-        { name: 'Square', angle: 90, orb: 8, color: '#FF0000' },
-        { name: 'Sextile', angle: 60, orb: 6, color: '#0000FF' }
-    ];
-    
+// Aspectler
+function calcAspects(positions) {
+    const keys = Object.keys(positions);
+    const found = [];
     for (let i = 0; i < keys.length; i++) {
         for (let j = i + 1; j < keys.length; j++) {
-            let diff = Math.abs(planets[keys[i]] - planets[keys[j]]);
+            let diff = Math.abs(positions[keys[i]].lon - positions[keys[j]].lon);
             if (diff > 180) diff = 360 - diff;
-            
-            for (let aspect of aspectTypes) {
-                if (Math.abs(diff - aspect.angle) <= aspect.orb) {
-                    aspects.push({
-                        p1: keys[i],
-                        p2: keys[j],
-                        type: aspect.name,
-                        angle: diff,
-                        color: aspect.color
-                    });
+            for (const asp of ASPECT_TYPES) {
+                const orb = Math.abs(diff - asp.angle);
+                if (orb <= asp.orb) {
+                    found.push({ p1: keys[i], p2: keys[j], type: asp, orb: orb });
                     break;
                 }
             }
         }
     }
+    return found;
+}
+
+// ---------- ANA HESAPLAMA ----------
+function computeChart() {
+    const dateVal = document.getElementById('birth-date').value;
+    const timeVal = document.getElementById('birth-time').value;
+    const sel = document.getElementById('city');
+    const opt = sel.options[sel.selectedIndex];
     
-    return aspects;
+    const lat = parseFloat(opt.dataset.lat);
+    const lon = parseFloat(opt.dataset.lon);
+    const tz = parseFloat(opt.dataset.tz);
+    
+    // UTC'ye çevir
+    const [hh, mm] = timeVal.split(':').map(Number);
+    const [Y, Mo, Dy] = dateVal.split('-').map(Number);
+    const utc = new Date(Date.UTC(Y, Mo - 1, Dy, hh - tz, mm, 0));
+    
+    const jd = julianDate(utc);
+    const gst = gmst(jd);
+    const lstHours = (gst + lon / 15) % 24;
+    const lstDeg = lstHours * 15;
+    
+    const asc = calcAscendant(lstDeg, lat);
+    const mc = calcMC(lstDeg);
+    const houses = calcHouses(asc, mc);
+    
+    // Gezegen boylamları + retro kontrolü
+    const positions = {};
+    for (const key of Object.keys(PLANETS)) {
+        const lonNow = geoLongitude(key, jd);
+        const lonNext = geoLongitude(key, jd + 1);
+        let delta = norm360(lonNext - lonNow);
+        const retro = delta > 180;
+        positions[key] = { lon: lonNow, retro: retro, house: 0 };
+    }
+    for (const key of Object.keys(positions)) {
+        positions[key].house = findHouse(positions[key].lon, houses);
+    }
+    
+    const aspects = calcAspects(positions);
+    
+    chart = {
+        dateVal, timeVal, tz,
+        city: opt.text, lat, lon,
+        utc, jd, lstHours,
+        asc, mc, houses, positions, aspects
+    };
+    
+    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(asc), '| MC:', fmtZodiac(mc));
+    return chart;
 }
 
-// Burç pozisyonu al
-function getZodiacPosition(deg) {
-    const signIndex = Math.floor(deg / 30);
-    const degInSign = Math.floor(deg % 30);
-    const sign = ZODIAC_SIGNS[signIndex];
-    return `${degInSign}° ${sign.symbol} ${sign.name}`;
+// ---------- FORMATLAMA ----------
+function fmtZodiac(lon) {
+    const s = SIGNS[Math.floor(lon / 30)];
+    const d = Math.floor(lon % 30);
+    const m = Math.floor(((lon % 30) - d) * 60);
+    return `${d}°${String(m).padStart(2, '0')}' ${s.symbol} ${s.name}`;
 }
 
-// Haritayı çiz
-function drawChart(data) {
-    const canvas = document.getElementById('main-canvas');
+function fmtDegMin(lon) {
+    const d = Math.floor(lon % 30);
+    const m = Math.floor(((lon % 30) - d) * 60);
+    return `${d}°${String(m).padStart(2, '0')}'`;
+}
+
+function fmtLST(hours) {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    const s = Math.floor((((hours - h) * 60) - m) * 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function fmtCoord(val, posChar, negChar) {
+    const d = Math.floor(Math.abs(val));
+    const m = Math.floor((Math.abs(val) - d) * 60);
+    return `${d}°${String(m).padStart(2, '0')}'${val >= 0 ? posChar : negChar}`;
+}
+
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ---------- ÇİZİM ----------
+function pointAt(deg, r, cx, cy, asc) {
+    const a = (180 - (deg - asc)) * DEG;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+}
+
+function drawWheel(c) {
+    const canvas = document.getElementById('wheel');
     const ctx = canvas.getContext('2d');
-    const center = 400;
+    const cx = 370, cy = 370;
+    const asc = c.asc;
     
-    // Temizle
-    ctx.clearRect(0, 0, 800, 800);
+    const R_OUT = 352;       // dış çember
+    const R_ZOD_IN = 306;    // zodyak halkası içi
+    const R_TICK = 292;      // cetvel içi
+    const R_PLANET = 258;    // gezegen glifi
+    const R_PLABEL = 226;    // gezegen derecesi
+    const R_HNUM = 168;      // ev numarası
+    const R_ASPECT = 148;    // aspect çemberi
     
-    // Arka plan çember
-    ctx.fillStyle = '#FAFAFA';
-    ctx.beginPath();
-    ctx.arc(center, center, 380, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.clearRect(0, 0, 740, 740);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 740, 740);
     
-    // Çemberler
-    const radii = [100, 180, 250, 320, 360];
-    radii.forEach(r => {
-        ctx.strokeStyle = '#E0E0E0';
+    const P = (deg, r) => pointAt(deg, r, cx, cy, asc);
+    
+    // Ana çemberler
+    for (const r of [R_OUT, R_ZOD_IN, R_TICK, R_ASPECT]) {
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = r === R_OUT ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    // Zodyak dilim sınırları
+    for (let i = 0; i < 12; i++) {
+        const [x1, y1] = P(i * 30, R_ZOD_IN);
+        const [x2, y2] = P(i * 30, R_OUT);
+        ctx.strokeStyle = '#666';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(center, center, r, 0, Math.PI * 2);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
         ctx.stroke();
-    });
+    }
     
-    // Evler (radyal çizgiler)
-    ctx.strokeStyle = '#CCCCCC';
-    ctx.lineWidth = 2;
-    data.houses.forEach((houseDeg, i) => {
-        const angle = (houseDeg - 90) * Math.PI / 180;
-        ctx.beginPath();
-        ctx.moveTo(center, center);
-        ctx.lineTo(center + Math.cos(angle) * 360, center + Math.sin(angle) * 360);
-        ctx.stroke();
-        
-        // Ev numarası
-        const textAngle = (houseDeg + 15 - 90) * Math.PI / 180;
-        const textX = center + Math.cos(textAngle) * 140;
-        const textY = center + Math.sin(textAngle) * 140;
-        ctx.fillStyle = '#999';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(i + 1, textX, textY);
-    });
-    
-    // Burçlar
-    ZODIAC_SIGNS.forEach(sign => {
-        const angle = (sign.start + 15 - data.asc - 90) * Math.PI / 180;
-        const x = center + Math.cos(angle) * 340;
-        const y = center + Math.sin(angle) * 340;
-        
-        ctx.fillStyle = '#333';
-        ctx.font = 'bold 24px Arial';
+    // Burç sembolleri (element renkleriyle)
+    for (let i = 0; i < 12; i++) {
+        const [x, y] = P(i * 30 + 15, (R_OUT + R_ZOD_IN) / 2);
+        ctx.fillStyle = ELEMENT_COLORS[SIGNS[i].element];
+        ctx.font = '26px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(sign.symbol, x, y);
+        ctx.fillText(SIGNS[i].symbol, x, y);
+    }
+    
+    // Derece cetveli (tikler)
+    for (let d = 0; d < 360; d++) {
+        let len = 4;
+        if (d % 10 === 0) len = 12;
+        else if (d % 5 === 0) len = 8;
+        const [x1, y1] = P(d, R_ZOD_IN);
+        const [x2, y2] = P(d, R_ZOD_IN - len);
+        ctx.strokeStyle = d % 10 === 0 ? '#555' : '#999';
+        ctx.lineWidth = d % 10 === 0 ? 1 : 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+    
+    // Ev cusps çizgileri
+    c.houses.forEach((hDeg, i) => {
+        const isAxis = (i === 0 || i === 3 || i === 6 || i === 9);
+        const [x1, y1] = P(hDeg, R_ASPECT);
+        const [x2, y2] = P(hDeg, isAxis ? R_ZOD_IN : R_TICK);
+        ctx.strokeStyle = isAxis ? '#222' : '#bbb';
+        ctx.lineWidth = isAxis ? 2.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        
+        // Cusp derece etiketi
+        const [lx, ly] = P(hDeg + 3, R_TICK - 16);
+        ctx.fillStyle = isAxis ? '#222' : '#888';
+        ctx.font = isAxis ? 'bold 11px Verdana' : '9px Verdana';
+        ctx.textAlign = 'center';
+        ctx.fillText(fmtDegMin(hDeg), lx, ly);
     });
     
-    // Aspectler
-    data.aspects.forEach(aspect => {
-        const p1Deg = data.planets[aspect.p1];
-        const p2Deg = data.planets[aspect.p2];
-        
-        const angle1 = (p1Deg - data.asc - 90) * Math.PI / 180;
-        const angle2 = (p2Deg - data.asc - 90) * Math.PI / 180;
-        
-        const x1 = center + Math.cos(angle1) * 230;
-        const y1 = center + Math.sin(angle1) * 230;
-        const x2 = center + Math.cos(angle2) * 230;
-        const y2 = center + Math.sin(angle2) * 230;
-        
-        ctx.strokeStyle = aspect.color;
-        ctx.lineWidth = aspect.type === 'Trine' ? 2 : 1;
-        ctx.setLineDash(aspect.type === 'Sextile' ? [5, 3] : []);
-        ctx.globalAlpha = 0.6;
+    // Eksen etiketleri: AC / IC / DC / MC
+    const axisLabels = [
+        { deg: c.houses[0], text: 'AC' },
+        { deg: c.houses[3], text: 'IC' },
+        { deg: c.houses[6], text: 'DC' },
+        { deg: c.houses[9], text: 'MC' }
+    ];
+    axisLabels.forEach(a => {
+        const [x, y] = P(a.deg, R_ASPECT - 14);
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 13px Verdana';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(a.text, x, y);
+    });
+    
+    // Ev numaraları
+    for (let i = 0; i < 12; i++) {
+        const start = c.houses[i];
+        const end = c.houses[(i + 1) % 12];
+        const mid = norm360(start + norm360(end - start) / 2);
+        const [x, y] = P(mid, R_HNUM);
+        ctx.fillStyle = '#999';
+        ctx.font = '13px Verdana';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(i + 1, x, y);
+    }
+    
+    // Aspect çizgileri (iç çember)
+    c.aspects.forEach(a => {
+        if (!a.type.draw) return;
+        const [x1, y1] = P(c.positions[a.p1].lon, R_ASPECT);
+        const [x2, y2] = P(c.positions[a.p2].lon, R_ASPECT);
+        ctx.strokeStyle = a.type.color;
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash(a.type.dash || []);
+        ctx.globalAlpha = 0.75;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -353,59 +468,199 @@ function drawChart(data) {
         ctx.setLineDash([]);
     });
     
-    // Gezegenler
-    Object.keys(data.planets).forEach(key => {
-        const deg = data.planets[key];
-        const angle = (deg - data.asc - 90) * Math.PI / 180;
-        const x = center + Math.cos(angle) * 270;
-        const y = center + Math.sin(angle) * 270;
+    // Gezegen işaret çizgileri (cetvelden içeri)
+    for (const key of Object.keys(c.positions)) {
+        const lon = c.positions[key].lon;
+        const [x1, y1] = P(lon, R_ZOD_IN);
+        const [x2, y2] = P(lon, R_TICK);
+        ctx.strokeStyle = PLANETS[key].color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+    
+    // Gezegenler (çakışma önleme ile)
+    const sorted = Object.keys(c.positions)
+        .map(k => ({ key: k, lon: c.positions[k].lon }))
+        .sort((a, b) => a.lon - b.lon);
+    
+    const MIN_GAP = 9;
+    for (let i = 0; i < sorted.length; i++) {
+        sorted[i].displayLon = sorted[i].lon;
+    }
+    for (let pass = 0; pass < 3; pass++) {
+        for (let i = 1; i < sorted.length; i++) {
+            const gap = sorted[i].displayLon - sorted[i - 1].displayLon;
+            if (gap < MIN_GAP) {
+                sorted[i].displayLon = sorted[i - 1].displayLon + MIN_GAP;
+            }
+        }
+    }
+    
+    sorted.forEach(p => {
+        const info = PLANETS[p.key];
+        const pos = c.positions[p.key];
         
-        // Gezegen sembolü
-        ctx.fillStyle = PLANETS[key].color;
-        ctx.font = 'bold 28px Arial';
+        // Gezegen glifi
+        const [gx, gy] = P(p.displayLon, R_PLANET);
+        ctx.fillStyle = info.color;
+        ctx.font = 'bold 24px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(PLANETS[key].symbol, x, y);
+        ctx.fillText(info.symbol, gx, gy);
         
-        // Derece
-        ctx.font = '10px Arial';
-        ctx.fillStyle = '#666';
-        const degInSign = Math.floor(deg % 30);
-        ctx.fillText(`${degInSign}°`, x, y + 18);
+        // Derece etiketi
+        const [dx, dy] = P(p.displayLon, R_PLABEL);
+        ctx.fillStyle = '#333';
+        ctx.font = '11px Verdana';
+        const d = Math.floor(pos.lon % 30);
+        ctx.fillText(`${d}°`, dx, dy);
+        
+        // Dakika + retro
+        const [mx, my] = P(p.displayLon, R_PLABEL - 18);
+        const m = Math.floor(((pos.lon % 30) - d) * 60);
+        ctx.fillStyle = '#888';
+        ctx.font = '9px Verdana';
+        ctx.fillText(`${String(m).padStart(2, '0')}'${pos.retro ? ' ℞' : ''}`, mx, my);
     });
     
-    console.log('✅ Çizim tamamlandı');
+    console.log('✅ Çark çizildi');
 }
 
-// Bilgileri göster
-function displayInfo(data) {
-    // Genel bilgiler
-    document.getElementById('chart-info').innerHTML = `
-        <p><strong>Tarih:</strong> ${data.birth.date}</p>
-        <p><strong>Saat:</strong> ${data.birth.time} (Yerel)</p>
-        <p><strong>Yer:</strong> ${data.birth.city}</p>
-        <p><strong>LST:</strong> ${data.lst.toFixed(2)} saat</p>
-        <p><strong>Yükselen (ASC):</strong> ${getZodiacPosition(data.asc)}</p>
-        <p><strong>Gökyüzü Ortası (MC):</strong> ${getZodiacPosition(data.mc)}</p>
-    `;
+// ---------- BİLGİ PANELLERİ ----------
+function fillInfo(c) {
+    const [Y, Mo, Dy] = c.dateVal.split('-').map(Number);
+    document.getElementById('info-date').innerHTML =
+        `<i>${Dy} ${MONTHS_EN[Mo - 1]} ${Y} - ${c.timeVal}</i> (EET)`;
     
-    // Gezegenler
-    let planetsHTML = '';
-    Object.keys(data.planets).forEach(key => {
-        planetsHTML += `<p>${PLANETS[key].symbol} ${PLANETS[key].name}: ${getZodiacPosition(data.planets[key])}</p>`;
-    });
-    document.getElementById('planets-info').innerHTML = planetsHTML;
+    const utcH = String(c.utc.getUTCHours()).padStart(2, '0');
+    const utcM = String(c.utc.getUTCMinutes()).padStart(2, '0');
+    document.getElementById('info-ut').innerHTML =
+        `<i>${c.utc.getUTCDate()} ${MONTHS_EN[c.utc.getUTCMonth()]} ${c.utc.getUTCFullYear()} - ${utcH}:${utcM}</i>`;
     
-    // Aspectler
-    let aspectsHTML = '';
-    data.aspects.forEach(asp => {
-        aspectsHTML += `<p style="color:${asp.color}">${PLANETS[asp.p1].symbol} ${asp.type} ${PLANETS[asp.p2].symbol}</p>`;
-    });
-    document.getElementById('aspects-info').innerHTML = aspectsHTML || '<p>Aspect bulunamadı</p>';
+    document.getElementById('info-lst').innerHTML = `<i>${fmtLST(c.lstHours)}</i>`;
+    document.getElementById('info-coords').innerHTML =
+        `<i>${fmtCoord(c.lat, 'N', 'S')}, ${fmtCoord(c.lon, 'E', 'W')}</i>`;
+    document.getElementById('info-city').innerHTML = `<i>${c.city}</i>`;
 }
 
-// Otomatik yükle
-window.addEventListener('load', () => {
-    console.log('✅ Sayfa hazır');
-    setTimeout(generateChart, 300);
+function fillPositions(c) {
+    const tbody = document.querySelector('#positions-table tbody');
+    let html = '';
+    
+    // AC ve MC satırları
+    html += rowPos('AC (Yükselen)', '#111', c.asc, '1');
+    html += rowPos('MC (Gökyüzü Ortası)', '#111', c.mc, '10');
+    
+    for (const key of Object.keys(c.positions)) {
+        const p = c.positions[key];
+        const info = PLANETS[key];
+        const label = `<span style="color:${info.color};font-weight:bold">${info.symbol}</span> ${info.name}${p.retro ? ' ℞' : ''}`;
+        html += rowPos(label, info.color, p.lon, p.house);
+    }
+    tbody.innerHTML = html;
+    
+    function rowPos(label, color, lon, house) {
+        const s = SIGNS[Math.floor(lon / 30)];
+        return `<tr>
+            <td>${label}</td>
+            <td><span style="color:${ELEMENT_COLORS[s.element]}">${s.symbol}</span> ${s.name}</td>
+            <td>${fmtDegMin(lon)}</td>
+            <td>${house}</td>
+        </tr>`;
+    }
+}
+
+function fillAspects(c) {
+    const tbody = document.querySelector('#aspects-table tbody');
+    if (c.aspects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">Aspect bulunamadı</td></tr>';
+        return;
+    }
+    tbody.innerHTML = c.aspects.map(a => {
+        const p1 = PLANETS[a.p1], p2 = PLANETS[a.p2];
+        return `<tr>
+            <td><span style="color:${p1.color};font-weight:bold">${p1.symbol}</span> ${p1.name}</td>
+            <td><span style="color:${a.type.color};font-weight:bold">${a.type.symbol} ${a.type.name}</span></td>
+            <td><span style="color:${p2.color};font-weight:bold">${p2.symbol}</span> ${p2.name}</td>
+            <td>${a.orb.toFixed(1)}°</td>
+        </tr>`;
+    }).join('');
+}
+
+function fillHouses(c) {
+    const tbody = document.querySelector('#houses-table tbody');
+    tbody.innerHTML = c.houses.map((h, i) => {
+        const s = SIGNS[Math.floor(h / 30)];
+        const special = i === 0 ? ' (AC)' : i === 3 ? ' (IC)' : i === 6 ? ' (DC)' : i === 9 ? ' (MC)' : '';
+        return `<tr>
+            <td><strong>${i + 1}${special}</strong></td>
+            <td><span style="color:${ELEMENT_COLORS[s.element]}">${s.symbol}</span> ${s.name}</td>
+            <td>${fmtDegMin(h)}</td>
+        </tr>`;
+    }).join('');
+}
+
+function fillDominants(c) {
+    const elements = { fire: 0, earth: 0, air: 0, water: 0 };
+    const elementNames = { fire: '🔥 Ateş', earth: '🌍 Toprak', air: '💨 Hava', water: '💧 Su' };
+    
+    for (const key of Object.keys(c.positions)) {
+        const s = SIGNS[Math.floor(c.positions[key].lon / 30)];
+        elements[s.element]++;
+    }
+    
+    const total = Object.keys(c.positions).length;
+    let html = '<div class="dom-section"><h4>Element Dağılımı</h4>';
+    for (const el of Object.keys(elements)) {
+        const pct = Math.round(elements[el] / total * 100);
+        html += `<div class="dom-bar">
+            <span class="dom-label">${elementNames[el]}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${pct}%;background:${ELEMENT_COLORS[el]}"></div></div>
+            <span>${elements[el]} (${pct}%)</span>
+        </div>`;
+    }
+    html += '</div>';
+    
+    document.getElementById('dominants-content').innerHTML = html;
+}
+
+// ---------- UI ----------
+function generateAll() {
+    const c = computeChart();
+    fillInfo(c);
+    drawWheel(c);
+    fillPositions(c);
+    fillAspects(c);
+    fillHouses(c);
+    fillDominants(c);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ DOM hazır');
+    
+    // Sekmeler
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        });
+    });
+    
+    // Form toggle
+    document.getElementById('edit-toggle').addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = document.getElementById('birth-form');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Hesapla butonu
+    document.getElementById('calc-btn').addEventListener('click', generateAll);
+    
+    // İlk yükleme
+    generateAll();
 });

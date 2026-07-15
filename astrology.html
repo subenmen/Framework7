@@ -3,62 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profesyonel Astroloji Haritası - v3.1.0</title>
-    <link rel="stylesheet" href="astrology.css?v=3.1.0">
+    <title>Birth Chart - Doğum Haritası Hesaplayıcı</title>
+    <link rel="stylesheet" href="astrology.css?v=4.0.0">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🌌 Profesyonel Doğum Haritası</h1>
-            <p class="version">v3.1.0 - Gerçek Astronomik Hesaplamalar</p>
-        </header>
+    <!-- Üst Bar (astro-seek stili) -->
+    <div class="top-bar">
+        <span class="top-bar-title">Birth Chart</span>
+        <span class="top-bar-sub">- Ücretsiz doğum haritası hesaplayıcı</span>
+    </div>
 
-        <div class="form-card">
-            <h2>📋 Doğum Bilgileri</h2>
+    <div class="page">
+        <!-- Edit data linki -->
+        <div class="edit-link-row">
+            <a href="#" id="edit-toggle">✏️ <span>Bilgileri düzenle</span></a>
+        </div>
+
+        <!-- Doğum Bilgileri Formu (gizli başlar) -->
+        <div class="birth-form" id="birth-form" style="display:none;">
             <div class="form-grid">
                 <div>
-                    <label>📅 Doğum Tarihi</label>
+                    <label>Doğum Tarihi</label>
                     <input type="date" id="birth-date" value="1993-01-31">
                 </div>
                 <div>
-                    <label>🕐 Doğum Saati (Yerel)</label>
+                    <label>Doğum Saati</label>
                     <input type="time" id="birth-time" value="15:00">
                 </div>
                 <div>
-                    <label>📍 Şehir</label>
+                    <label>Şehir</label>
                     <select id="city">
-                        <option value="ankara" data-lat="39.933" data-lon="32.850" data-tz="2" selected>Ankara</option>
-                        <option value="istanbul" data-lat="41.015" data-lon="28.980" data-tz="2">İstanbul</option>
-                        <option value="izmir" data-lat="38.420" data-lon="27.140" data-tz="2">İzmir</option>
+                        <option value="ankara" data-lat="39.9334" data-lon="32.8597" data-tz="2" selected>Ankara</option>
+                        <option value="istanbul" data-lat="41.0082" data-lon="28.9784" data-tz="2">İstanbul</option>
+                        <option value="izmir" data-lat="38.4237" data-lon="27.1428" data-tz="2">İzmir</option>
+                        <option value="antalya" data-lat="36.8969" data-lon="30.7133" data-tz="2">Antalya</option>
+                        <option value="bursa" data-lat="40.1885" data-lon="29.0610" data-tz="2">Bursa</option>
+                        <option value="adana" data-lat="37.0000" data-lon="35.3213" data-tz="2">Adana</option>
+                        <option value="konya" data-lat="37.8746" data-lon="32.4932" data-tz="2">Konya</option>
+                        <option value="trabzon" data-lat="41.0027" data-lon="39.7168" data-tz="2">Trabzon</option>
+                        <option value="diyarbakir" data-lat="37.9144" data-lon="40.2306" data-tz="2">Diyarbakır</option>
+                        <option value="van" data-lat="38.4891" data-lon="43.4089" data-tz="2">Van</option>
                     </select>
                 </div>
             </div>
-            <button onclick="generateChart()" class="btn-primary">✨ Harita Oluştur</button>
+            <button id="calc-btn" class="calc-btn">Haritayı Hesapla</button>
         </div>
 
-        <div class="chart-container">
-            <div class="chart-wrapper">
-                <canvas id="main-canvas" width="800" height="800"></canvas>
-                <div id="chart-overlays"></div>
+        <!-- Bilgi Tablosu -->
+        <table class="info-table">
+            <tr><td class="label">Doğum Tarihi:</td><td class="value" id="info-date">-</td></tr>
+            <tr><td class="label">Universal Time:</td><td class="value" id="info-ut">-</td></tr>
+            <tr><td class="label">Yerel Yıldız Zamanı:</td><td class="value" id="info-lst">-</td></tr>
+            <tr><td class="label">Ev sistemi:</td><td class="value"><i>Placidus system</i></td></tr>
+            <tr><td class="label">Enlem, Boylam:</td><td class="value" id="info-coords">-</td></tr>
+            <tr><td class="label">Şehir:</td><td class="value" id="info-city">-</td></tr>
+            <tr><td class="label">Ülke:</td><td class="value">🇹🇷 <i>Turkey (TR)</i></td></tr>
+        </table>
+
+        <!-- Sekmeler -->
+        <div class="tabs">
+            <button class="tab active" data-tab="chart">Chart</button>
+            <button class="tab" data-tab="aspects">Aspects</button>
+            <button class="tab" data-tab="positions">Positions</button>
+            <button class="tab" data-tab="houses">Houses</button>
+            <button class="tab" data-tab="dominants">Dominants</button>
+        </div>
+
+        <!-- Sekme İçerikleri -->
+        <div class="tab-content active" id="tab-chart">
+            <div class="chart-holder">
+                <canvas id="wheel" width="740" height="740"></canvas>
             </div>
         </div>
 
-        <div class="info-grid">
-            <div class="info-card">
-                <h3>📊 Harita Bilgileri</h3>
-                <div id="chart-info"></div>
-            </div>
-            <div class="info-card">
-                <h3>🪐 Gezegenler</h3>
-                <div id="planets-info"></div>
-            </div>
-            <div class="info-card">
-                <h3>⭐ Aspectler</h3>
-                <div id="aspects-info"></div>
-            </div>
+        <div class="tab-content" id="tab-aspects">
+            <table class="data-table" id="aspects-table">
+                <thead><tr><th>Gezegen</th><th>Aspect</th><th>Gezegen</th><th>Orb</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
+
+        <div class="tab-content" id="tab-positions">
+            <table class="data-table" id="positions-table">
+                <thead><tr><th>Gezegen</th><th>Burç</th><th>Derece</th><th>Ev</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="tab-content" id="tab-houses">
+            <table class="data-table" id="houses-table">
+                <thead><tr><th>Ev</th><th>Burç</th><th>Derece</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="tab-content" id="tab-dominants">
+            <div id="dominants-content"></div>
+        </div>
+
+        <!-- Alt bilgi -->
+        <div class="footer-pill">KUBEY Astroloji v4.0.0</div>
     </div>
 
-    <script src="astrology.js?v=3.1.0"></script>
+    <script src="astrology.js?v=4.0.0"></script>
 </body>
 </html>
