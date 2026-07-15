@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birth Chart - Doğum Haritası Hesaplayıcı</title>
-    <link rel="stylesheet" href="astrology.css?v=4.1.0">
+    <link rel="stylesheet" href="astrology.css?v=4.2.0">
 </head>
 <body>
     <!-- Üst Bar (astro-seek stili) -->
@@ -14,9 +14,21 @@
     </div>
 
     <div class="page">
-        <!-- Edit data linki -->
+        <!-- Edit data linki + Ev Sistemi seçici -->
         <div class="edit-link-row">
             <a href="#" id="edit-toggle">✏️ <span>Bilgileri düzenle</span></a>
+            <span class="hsys-picker">
+                <label for="house-system">🏠 Ev Sistemi:</label>
+                <select id="house-system">
+                    <option value="placidus" selected>Placidus</option>
+                    <option value="koch">Koch</option>
+                    <option value="whole">Whole Sign (Bütün Burç)</option>
+                    <option value="equal">Equal (Eşit Ev)</option>
+                    <option value="porphyry">Porphyry</option>
+                    <option value="regiomontanus">Regiomontanus</option>
+                    <option value="campanus">Campanus</option>
+                </select>
+            </span>
         </div>
 
         <!-- Doğum Bilgileri Formu (gizli başlar) -->
@@ -54,7 +66,7 @@
             <tr><td class="label">Doğum Tarihi:</td><td class="value" id="info-date">-</td></tr>
             <tr><td class="label">Universal Time:</td><td class="value" id="info-ut">-</td></tr>
             <tr><td class="label">Yerel Yıldız Zamanı:</td><td class="value" id="info-lst">-</td></tr>
-            <tr><td class="label">Ev sistemi:</td><td class="value"><i>Placidus system</i></td></tr>
+            <tr><td class="label">Ev sistemi:</td><td class="value" id="info-hsys"><i>Placidus system</i></td></tr>
             <tr><td class="label">Enlem, Boylam:</td><td class="value" id="info-coords">-</td></tr>
             <tr><td class="label">Şehir:</td><td class="value" id="info-city">-</td></tr>
             <tr><td class="label">Ülke:</td><td class="value">🇹🇷 <i>Turkey (TR)</i></td></tr>
@@ -102,9 +114,9 @@
         </div>
 
         <!-- Alt bilgi -->
-        <div class="footer-pill">KUBEY Astroloji v4.1.0</div>
+        <div class="footer-pill">KUBEY Astroloji v4.2.0</div>
     </div>
 
-    <script src="astrology.js?v=4.1.0"></script>
+    <script src="astrology.js?v=4.2.0"></script>
 </body>
 </html>

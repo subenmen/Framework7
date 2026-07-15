@@ -1,6 +1,6 @@
-// KUBEY Astroloji v4.1.0 - Astro-Seek tarzı profesyonel doğum haritası
+// KUBEY Astroloji v4.2.0 - Astro-Seek tarzı profesyonel doğum haritası
 // Gerçek astronomik hesaplamalar: JPL Kepler elemanları + gerçek Placidus ev sistemi
-console.log('🌟 Astroloji v4.1.0 yükleniyor...');
+console.log('🌟 Astroloji v4.2.0 yükleniyor...');
 
 const DEG = Math.PI / 180;
 
@@ -217,24 +217,105 @@ function placidusCusp(ramcDeg, latDeg, epsDeg, offsetConst, k, initialGuess) {
     return norm360(lam);
 }
 
-function calcHouses(asc, mc, ramcDeg, latDeg) {
+// Genel "kutuplu yükselen" formülü:
+// λ = atan2( sin R, cos R·cos ε − sin ε·tan P )
+// P = 0 iken MC formülü, P = enlem & R = RAMC+90 iken ASC formülü verir.
+function lonFromPole(raDeg, poleDeg, epsDeg) {
+    const R = raDeg * DEG, P = poleDeg * DEG, eps = epsDeg * DEG;
+    const lam = Math.atan2(Math.sin(R), Math.cos(R) * Math.cos(eps) - Math.sin(eps) * Math.tan(P));
+    return norm360(lam / DEG);
+}
+
+// Porphyry: ASC-MC arası eşit üçe bölme
+function porphyryHouses(asc, mc) {
+    const houses = new Array(12);
+    houses[0] = asc;
+    houses[3] = norm360(mc + 180);
+    houses[6] = norm360(asc + 180);
+    houses[9] = mc;
+    let arc = norm360(asc - mc);
+    houses[10] = norm360(mc + arc / 3);
+    houses[11] = norm360(mc + 2 * arc / 3);
+    arc = norm360(houses[3] - asc);
+    houses[1] = norm360(asc + arc / 3);
+    houses[2] = norm360(asc + 2 * arc / 3);
+    houses[4] = norm360(houses[10] + 180);
+    houses[5] = norm360(houses[11] + 180);
+    houses[7] = norm360(houses[1] + 180);
+    houses[8] = norm360(houses[2] + 180);
+    return houses;
+}
+
+function calcHouses(asc, mc, ramcDeg, latDeg, system) {
     const eps = 23.4367;
     const houses = new Array(12);
     
+    // --- Bütün burç (Whole Sign): 1. ev = yükselenin burcunun 0 derecesi ---
+    if (system === 'whole') {
+        const startSign = Math.floor(asc / 30) * 30;
+        for (let i = 0; i < 12; i++) houses[i] = norm360(startSign + i * 30);
+        return houses;
+    }
+    
+    // --- Eşit ev (Equal): her ev ASC'den itibaren 30 derece ---
+    if (system === 'equal') {
+        for (let i = 0; i < 12; i++) houses[i] = norm360(asc + i * 30);
+        return houses;
+    }
+    
+    // Köşe evler tüm kadran sistemlerinde aynı
     houses[0] = asc;                  // 1. ev (ASC)
     houses[3] = norm360(mc + 180);    // 4. ev (IC)
     houses[6] = norm360(asc + 180);   // 7. ev (DC)
     houses[9] = mc;                   // 10. ev (MC)
     
-    // Kutup bölgelerinde Placidus tanımsızdır -> Porphyry'ye düş
-    if (Math.abs(latDeg) > 66) {
-        let arc = norm360(asc - mc);
-        houses[10] = norm360(mc + arc / 3);
-        houses[11] = norm360(mc + 2 * arc / 3);
-        arc = norm360(houses[3] - asc);
-        houses[1] = norm360(asc + arc / 3);
-        houses[2] = norm360(asc + 2 * arc / 3);
+    // Kutup bölgelerinde kadran sistemleri tanımsız -> Porphyry
+    if (Math.abs(latDeg) > 66 && system !== 'porphyry') {
+        return porphyryHouses(asc, mc);
+    }
+    
+    if (system === 'porphyry') {
+        return porphyryHouses(asc, mc);
+    }
+    
+    if (system === 'koch') {
+        // Koch (Doğum Yeri): MC derecesinin yarı-gündüz yayı (SA) üçe bölünür,
+        // ara cusps o anlardaki yükselenlerdir.
+        const decMC = Math.asin(Math.sin(eps * DEG) * Math.sin(mc * DEG));
+        let sinAD = Math.tan(latDeg * DEG) * Math.tan(decMC);
+        sinAD = Math.max(-1, Math.min(1, sinAD));
+        const AD = Math.asin(sinAD) / DEG;
+        const SA = 90 + AD;
+        
+        houses[10] = calcAscendant(norm360(ramcDeg - 2 * SA / 3), latDeg);  // 11. ev
+        houses[11] = calcAscendant(norm360(ramcDeg - SA / 3), latDeg);      // 12. ev
+        houses[1]  = calcAscendant(norm360(ramcDeg + SA / 3), latDeg);      // 2. ev
+        houses[2]  = calcAscendant(norm360(ramcDeg + 2 * SA / 3), latDeg);  // 3. ev
+    } else if (system === 'regiomontanus') {
+        // Regiomontanus: gök ekvatoru 30 derecelik eşit parçalara bölünür.
+        // Kutup: tan P = tan φ · sin D
+        const cusp = (D) => {
+            const pole = Math.atan(Math.tan(latDeg * DEG) * Math.sin(D * DEG)) / DEG;
+            return lonFromPole(norm360(ramcDeg + D), pole, eps);
+        };
+        houses[10] = cusp(30);   // 11. ev
+        houses[11] = cusp(60);   // 12. ev
+        houses[1]  = cusp(120);  // 2. ev
+        houses[2]  = cusp(150);  // 3. ev
+    } else if (system === 'campanus') {
+        // Campanus: birincil dikey (prime vertical) 30 derecelik parçalara bölünür.
+        // RA farkı: tan ΔRA = tan D · cos φ, kutup: sin P = sin φ · sin D
+        const cusp = (D) => {
+            const dRA = Math.atan2(Math.sin(D * DEG) * Math.cos(latDeg * DEG), Math.cos(D * DEG)) / DEG;
+            const pole = Math.asin(Math.sin(latDeg * DEG) * Math.sin(D * DEG)) / DEG;
+            return lonFromPole(norm360(ramcDeg + dRA), pole, eps);
+        };
+        houses[10] = cusp(30);
+        houses[11] = cusp(60);
+        houses[1]  = cusp(120);
+        houses[2]  = cusp(150);
     } else {
+        // Placidus (varsayılan)
         houses[10] = placidusCusp(ramcDeg, latDeg, eps, 0, 1 / 3, 30);    // 11. ev
         houses[11] = placidusCusp(ramcDeg, latDeg, eps, 0, 2 / 3, 60);    // 12. ev
         houses[1]  = placidusCusp(ramcDeg, latDeg, eps, 60, 2 / 3, 120);  // 2. ev
@@ -303,9 +384,10 @@ function computeChart() {
     const lstHours = (gst + lon / 15) % 24;
     const lstDeg = lstHours * 15;
     
+    const hsys = document.getElementById('house-system').value;
     const asc = calcAscendant(lstDeg, lat);
     const mc = calcMC(lstDeg);
-    const houses = calcHouses(asc, mc, lstDeg, lat);
+    const houses = calcHouses(asc, mc, lstDeg, lat, hsys);
     
     // Gezegen boylamları + retro kontrolü
     const positions = {};
@@ -325,7 +407,7 @@ function computeChart() {
     chart = {
         dateVal, timeVal, tz,
         city: opt.text, lat, lon,
-        utc, jd, lstHours,
+        utc, jd, lstHours, hsys,
         asc, mc, houses, positions, aspects
     };
     
@@ -576,6 +658,17 @@ function fillInfo(c) {
     document.getElementById('info-coords').innerHTML =
         `<i>${fmtCoord(c.lat, 'N', 'S')}, ${fmtCoord(c.lon, 'E', 'W')}</i>`;
     document.getElementById('info-city').innerHTML = `<i>${c.city}</i>`;
+    
+    const hsysNames = {
+        placidus: 'Placidus system',
+        koch: 'Koch system',
+        whole: 'Whole Sign system',
+        equal: 'Equal House system',
+        porphyry: 'Porphyry system',
+        regiomontanus: 'Regiomontanus system',
+        campanus: 'Campanus system'
+    };
+    document.getElementById('info-hsys').innerHTML = `<i>${hsysNames[c.hsys] || c.hsys}</i>`;
 }
 
 function fillPositions(c) {
@@ -692,6 +785,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Hesapla butonu
     document.getElementById('calc-btn').addEventListener('click', generateAll);
+    
+    // Ev sistemi değişince haritayı yeniden hesapla
+    document.getElementById('house-system').addEventListener('change', () => {
+        console.log('🏠 Ev sistemi değişti:', document.getElementById('house-system').value);
+        generateAll();
+    });
     
     // İlk yükleme
     generateAll();

@@ -40,6 +40,35 @@ body {
 .edit-link-row {
     padding: 14px 18px;
     border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hsys-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+}
+
+.hsys-picker select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    color: #33436a;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.hsys-picker select:focus {
+    outline: none;
+    border-color: #33436a;
 }
 
 .edit-link-row a {
