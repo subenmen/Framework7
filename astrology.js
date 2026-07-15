@@ -380,20 +380,41 @@ function interpolateHouse(start, end, ratio) {
 function calculateLocalSiderealTime(date, longitude) {
     try {
         // J2000 epoch (1 Ocak 2000, 12:00 UTC)
-        const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0) / 1000; // Unix timestamp (saniye)
-        const currentTime = date.getTime() / 1000; // Unix timestamp (saniye)
+        const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
         
-        // J2000'den geçen gün sayısı
-        const d = (currentTime - J2000) / 86400;
+        // UTC'deki güncel zaman
+        const utcTime = date.getTime();
         
-        // Greenwich Mean Sidereal Time (GMST) hesapla
-        const gmst = 18.697374558 + 24.06570982441908 * d;
+        // J2000'den geçen gün sayısı (ondalıklı)
+        const d = (utcTime - J2000) / (1000 * 60 * 60 * 24);
+        
+        // Greenwich Mean Sidereal Time (GMST) - saat cinsinden
+        // Meeus formülü
+        const T = d / 36525; // Julian centuries
+        let gmst = 280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - (T * T * T) / 38710000;
+        
+        // 0-360 aralığına normalize et
+        gmst = ((gmst % 360) + 360) % 360;
+        
+        // Dereceyi saate çevir
+        gmst = gmst / 15;
         
         // Local Sidereal Time (LST) hesapla
         const lst = gmst + (longitude / 15);
         
         // 0-24 aralığına normalize et
-        return ((lst % 24) + 24) % 24;
+        const lstNormalized = ((lst % 24) + 24) % 24;
+        
+        console.log('LST Hesaplama:', {
+            date: date.toISOString(),
+            longitude: longitude,
+            d: d.toFixed(2),
+            gmst: gmst.toFixed(4),
+            lst: lstNormalized.toFixed(4),
+            lstHMS: `${Math.floor(lstNormalized)}:${Math.floor((lstNormalized % 1) * 60)}:${Math.floor(((lstNormalized % 1) * 60 % 1) * 60)}`
+        });
+        
+        return lstNormalized;
     } catch (error) {
         console.error('LST hesaplama hatası:', error);
         return 0;
