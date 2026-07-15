@@ -60,15 +60,36 @@ const aspectTypes = {
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Uygulama başlatılıyor...');
+    
     initializeStars();
     initializeCanvas();
     initializeControls();
     initializeZodiacWheel();
     
-    // Örnek harita yükle
+    // Buton event listeners
     document.getElementById('generate-chart').addEventListener('click', generateChart);
     
+    // Test butonu
+    const testBtn = document.getElementById('test-chart');
+    if (testBtn) {
+        testBtn.addEventListener('click', () => {
+            console.log('🧪 Test haritası oluşturuluyor...');
+            // Test verileri: 31 Ocak 1993, 15:00, Ankara
+            const testData = {
+                name: 'Test Haritası',
+                birthDate: '1993-01-31',
+                birthTime: '15:00',
+                city: 'Ankara',
+                latitude: 39.93,
+                longitude: 32.85
+            };
+            calculateChart(testData);
+        });
+    }
+    
     // Başlangıçta örnek harita göster
+    console.log('📊 Başlangıç haritası yükleniyor...');
     loadExampleChart();
 });
 
