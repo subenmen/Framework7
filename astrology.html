@@ -7,7 +7,30 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>KUBEY - Profesyonel Astroloji Haritası</title>
-    <link rel="stylesheet" href="astrology.css?v=2.0.0">
+    
+    <script>
+        // Otomatik versiyon sistemi - Her yüklemede yeni timestamp
+        window.APP_VERSION = Date.now();
+        window.APP_VERSION_DATE = new Date().toLocaleString('tr-TR');
+        
+        // CSS'i dinamik yükle
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'astrology.css?v=' + APP_VERSION;
+        document.head.appendChild(cssLink);
+        
+        // Cache temizleme
+        const lastVersion = localStorage.getItem('astro_version');
+        if (lastVersion !== APP_VERSION.toString()) {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+            localStorage.setItem('astro_version', APP_VERSION.toString());
+            console.log('✅ Yeni versiyon yüklendi:', APP_VERSION_DATE);
+        }
+    </script>
 </head>
 <body>
     <div class="astro-container">
@@ -15,6 +38,9 @@
         <div class="header">
             <h1 class="title">🌌 Profesyonel Astroloji Haritası</h1>
             <p class="subtitle">Doğum bilgilerinizi girin ve kişisel haritanızı oluşturun</p>
+            <div class="version-info" id="version-info">
+                <span>📦 Versiyon: <span id="app-version">Yükleniyor...</span></span>
+            </div>
         </div>
 
         <!-- Doğum Bilgileri Formu -->
@@ -150,21 +176,18 @@
     <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script>
-        // Cache busting - Versiyon kontrolü
-        const APP_VERSION = '2.0.0';
-        const LAST_VERSION = localStorage.getItem('astro_version');
-        
-        if (LAST_VERSION !== APP_VERSION) {
-            // Yeni versiyon varsa cache'i temizle
-            if ('caches' in window) {
-                caches.keys().then(names => {
-                    names.forEach(name => caches.delete(name));
-                });
+        // JavaScript'i otomatik versiyon ile yükle
+        const scriptTag = document.createElement('script');
+        scriptTag.src = 'astrology.js?v=' + window.APP_VERSION;
+        scriptTag.onload = function() {
+            // Versiyon bilgisini göster
+            const versionElement = document.getElementById('app-version');
+            if (versionElement) {
+                versionElement.textContent = window.APP_VERSION_DATE;
+                versionElement.style.color = '#4ade80';
             }
-            localStorage.setItem('astro_version', APP_VERSION);
-            console.log('Yeni versiyon yüklendi:', APP_VERSION);
-        }
+        };
+        document.body.appendChild(scriptTag);
     </script>
-    <script src="astrology.js?v=2.0.0"></script>
 </body>
 </html>
