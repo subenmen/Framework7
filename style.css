@@ -1,0 +1,193 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.container {
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+.logo-wrapper {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    padding: 60px 80px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    min-width: 400px;
+}
+
+#logo-k {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 30px;
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(0, 217, 255, 0.5));
+}
+
+#k-vertical,
+#k-diagonal-1,
+#k-diagonal-2 {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+}
+
+.company-name {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.letter {
+    font-size: 48px;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    transform: translateY(30px) rotateX(90deg);
+}
+
+.tagline {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    opacity: 0;
+}
+
+.tagline-word {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.particle:nth-child(1) { top: 20%; left: 10%; background: #00D9FF; }
+.particle:nth-child(2) { top: 30%; right: 15%; background: #FF6B6B; }
+.particle:nth-child(3) { top: 50%; left: 5%; background: #4ECDC4; }
+.particle:nth-child(4) { top: 70%; right: 10%; background: #FFE66D; }
+.particle:nth-child(5) { top: 15%; left: 50%; background: #00D9FF; }
+.particle:nth-child(6) { bottom: 20%; left: 20%; background: #FF6B6B; }
+.particle:nth-child(7) { bottom: 30%; right: 25%; background: #4ECDC4; }
+.particle:nth-child(8) { top: 40%; right: 5%; background: #FFE66D; }
+
+.replay-btn {
+    margin-top: 40px;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #667eea;
+    background: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.replay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.replay-btn:active {
+    transform: translateY(0);
+}
+
+.replay-btn.visible {
+    opacity: 1;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+/* Responsive tasarım */
+.nav-links {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.nav-link {
+    padding: 12px 30px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .logo-wrapper {
+        padding: 40px 50px;
+        min-width: 320px;
+    }
+    
+    #logo-k {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .letter {
+        font-size: 36px;
+    }
+    
+    .tagline {
+        font-size: 14px;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+        align-items: center;
+    }
+}
