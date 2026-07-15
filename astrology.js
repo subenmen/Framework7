@@ -1,6 +1,6 @@
-// KUBEY Astroloji v4.0.0 - Astro-Seek tarzı profesyonel doğum haritası
-// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + Placidus/Porphyry evler
-console.log('🌟 Astroloji v4.0.0 yükleniyor...');
+// KUBEY Astroloji v4.1.0 - Astro-Seek tarzı profesyonel doğum haritası
+// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + gerçek Placidus ev sistemi
+console.log('🌟 Astroloji v4.1.0 yükleniyor...');
 
 const DEG = Math.PI / 180;
 
@@ -187,33 +187,65 @@ function calcMC(lstDeg) {
     return norm360(mc);
 }
 
-// Evler (Porphyry: ASC-MC arası eşit üçe bölme)
-function calcHouses(asc, mc) {
+// ---- PLACIDUS EV SİSTEMİ ----
+// Yarı-yay (semi-arc) iterasyon yöntemi.
+// Ara cusp noktası: RA = RAMC + sabit + k * SA(δ)  formülüyle iteratif çözülür.
+//   cusp 11: sabit=0,   k=1/3   | cusp 12: sabit=0,   k=2/3
+//   cusp  2: sabit=60,  k=2/3   | cusp  3: sabit=120, k=1/3
+function placidusCusp(ramcDeg, latDeg, epsDeg, offsetConst, k, initialGuess) {
+    const phi = latDeg * DEG;
+    const eps = epsDeg * DEG;
+    let ra = ramcDeg + initialGuess;
+    
+    for (let i = 0; i < 40; i++) {
+        // RA'dan ekliptik boylam: tan λ = tan α / cos ε (doğru çeyrekle)
+        const lam = Math.atan2(Math.sin(ra * DEG), Math.cos(ra * DEG) * Math.cos(eps));
+        // Bu noktanın deklinasyonu: sin δ = sin ε · sin λ
+        const dec = Math.asin(Math.sin(eps) * Math.sin(lam));
+        // Yarı-gündüz yayı: cos SA = -tan φ · tan δ
+        let cosSA = -Math.tan(phi) * Math.tan(dec);
+        if (cosSA < -1) cosSA = -1;
+        if (cosSA > 1) cosSA = 1;
+        const SA = Math.acos(cosSA) / DEG;
+        
+        const raNew = ramcDeg + offsetConst + k * SA;
+        if (Math.abs(raNew - ra) < 0.00005) { ra = raNew; break; }
+        ra = raNew;
+    }
+    
+    const lam = Math.atan2(Math.sin(ra * DEG), Math.cos(ra * DEG) * Math.cos(eps)) / DEG;
+    return norm360(lam);
+}
+
+function calcHouses(asc, mc, ramcDeg, latDeg) {
+    const eps = 23.4367;
     const houses = new Array(12);
-    houses[0] = asc;          // 1. ev
-    houses[9] = mc;           // 10. ev
-    houses[6] = norm360(asc + 180);  // 7. ev
-    houses[3] = norm360(mc + 180);   // 4. ev
     
-    // MC -> ASC arası (11, 12. evler)
-    let arc = norm360(asc - mc);
-    houses[10] = norm360(mc + arc / 3);
-    houses[11] = norm360(mc + 2 * arc / 3);
+    houses[0] = asc;                  // 1. ev (ASC)
+    houses[3] = norm360(mc + 180);    // 4. ev (IC)
+    houses[6] = norm360(asc + 180);   // 7. ev (DC)
+    houses[9] = mc;                   // 10. ev (MC)
     
-    // ASC -> IC arası (2, 3. evler)
-    arc = norm360(houses[3] - asc);
-    houses[1] = norm360(asc + arc / 3);
-    houses[2] = norm360(asc + 2 * arc / 3);
+    // Kutup bölgelerinde Placidus tanımsızdır -> Porphyry'ye düş
+    if (Math.abs(latDeg) > 66) {
+        let arc = norm360(asc - mc);
+        houses[10] = norm360(mc + arc / 3);
+        houses[11] = norm360(mc + 2 * arc / 3);
+        arc = norm360(houses[3] - asc);
+        houses[1] = norm360(asc + arc / 3);
+        houses[2] = norm360(asc + 2 * arc / 3);
+    } else {
+        houses[10] = placidusCusp(ramcDeg, latDeg, eps, 0, 1 / 3, 30);    // 11. ev
+        houses[11] = placidusCusp(ramcDeg, latDeg, eps, 0, 2 / 3, 60);    // 12. ev
+        houses[1]  = placidusCusp(ramcDeg, latDeg, eps, 60, 2 / 3, 120);  // 2. ev
+        houses[2]  = placidusCusp(ramcDeg, latDeg, eps, 120, 1 / 3, 150); // 3. ev
+    }
     
-    // IC -> DSC arası (5, 6. evler)
-    arc = norm360(houses[6] - houses[3]);
-    houses[4] = norm360(houses[3] + arc / 3);
-    houses[5] = norm360(houses[3] + 2 * arc / 3);
-    
-    // DSC -> MC arası (8, 9. evler)
-    arc = norm360(houses[9] - houses[6]);
-    houses[7] = norm360(houses[6] + arc / 3);
-    houses[8] = norm360(houses[6] + 2 * arc / 3);
+    // Karşıt cusps
+    houses[4] = norm360(houses[10] + 180);  // 5. ev
+    houses[5] = norm360(houses[11] + 180);  // 6. ev
+    houses[7] = norm360(houses[1] + 180);   // 8. ev
+    houses[8] = norm360(houses[2] + 180);   // 9. ev
     
     return houses;
 }
@@ -273,7 +305,7 @@ function computeChart() {
     
     const asc = calcAscendant(lstDeg, lat);
     const mc = calcMC(lstDeg);
-    const houses = calcHouses(asc, mc);
+    const houses = calcHouses(asc, mc, lstDeg, lat);
     
     // Gezegen boylamları + retro kontrolü
     const positions = {};
