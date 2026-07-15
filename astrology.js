@@ -150,9 +150,17 @@ function rotateChartBy(degrees) {
 
 // Varsayılan tarih
 function setDefaultDate() {
-    const today = new Date();
     const dateInput = document.getElementById('birth-date');
-    dateInput.value = today.toISOString().split('T')[0];
+    const timeInput = document.getElementById('birth-time');
+    const cityInput = document.getElementById('birth-city');
+    
+    // Default: 31 Ocak 1993, 15:00, Ankara
+    if (!dateInput.value) dateInput.value = '1993-01-31';
+    if (!timeInput.value) timeInput.value = '15:00';
+    if (!cityInput.value) cityInput.value = 'ankara';
+    
+    // Max tarih bugün
+    const today = new Date();
     dateInput.max = today.toISOString().split('T')[0];
 }
 
