@@ -1,4 +1,5 @@
-// Mobil-First İnteraktif Astroloji Haritası
+// Profesyonel Astroloji Doğum Haritası
+// Gerçek Astronomik Hesaplamalar ile
 
 // Şehir koordinatları
 const cityCoordinates = {
@@ -14,75 +15,140 @@ const cityCoordinates = {
     diyarbakir: { lat: 37.9144, lon: 40.2306, tz: 3 }
 };
 
-// Burç bilgileri
-const zodiacSigns = [
-    { name: 'Koç', symbol: '♈', start: [3, 21], end: [4, 19], element: 'Ateş', quality: 'Öncü', ruler: 'Mars' },
-    { name: 'Boğa', symbol: '♉', start: [4, 20], end: [5, 20], element: 'Toprak', quality: 'Sabit', ruler: 'Venüs' },
-    { name: 'İkizler', symbol: '♊', start: [5, 21], end: [6, 20], element: 'Hava', quality: 'Değişken', ruler: 'Merkür' },
-    { name: 'Yengeç', symbol: '♋', start: [6, 21], end: [7, 22], element: 'Su', quality: 'Öncü', ruler: 'Ay' },
-    { name: 'Aslan', symbol: '♌', start: [7, 23], end: [8, 22], element: 'Ateş', quality: 'Sabit', ruler: 'Güneş' },
-    { name: 'Başak', symbol: '♍', start: [8, 23], end: [9, 22], element: 'Toprak', quality: 'Değişken', ruler: 'Merkür' },
-    { name: 'Terazi', symbol: '♎', start: [9, 23], end: [10, 22], element: 'Hava', quality: 'Öncü', ruler: 'Venüs' },
-    { name: 'Akrep', symbol: '♏', start: [10, 23], end: [11, 21], element: 'Su', quality: 'Sabit', ruler: 'Mars/Plüton' },
-    { name: 'Yay', symbol: '♐', start: [11, 22], end: [12, 21], element: 'Ateş', quality: 'Değişken', ruler: 'Jüpiter' },
-    { name: 'Oğlak', symbol: '♑', start: [12, 22], end: [1, 19], element: 'Toprak', quality: 'Öncü', ruler: 'Satürn' },
-    { name: 'Kova', symbol: '♒', start: [1, 20], end: [2, 18], element: 'Hava', quality: 'Sabit', ruler: 'Uranüs' },
-    { name: 'Balık', symbol: '♓', start: [2, 19], end: [3, 20], element: 'Su', quality: 'Değişken', ruler: 'Neptün' }
-];
+// Burç sembolleri ve renkleri
+const zodiacSymbols = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+const zodiacNames = ['Koç', 'Boğa', 'İkizler', 'Yengeç', 'Aslan', 'Başak', 'Terazi', 'Akrep', 'Yay', 'Oğlak', 'Kova', 'Balık'];
+const zodiacColors = ['#E74C3C', '#27AE60', '#F39C12', '#3498DB', '#E67E22', '#95A5A6', '#16A085', '#8E44AD', '#C0392B', '#2C3E50', '#1ABC9C', '#9B59B6'];
 
-// 12 Ev anlamları
-const housesMeanings = [
-    'Kişilik, Görünüş, Yükselen',
-    'Mülkiyet, Değerler, Para',
-    'İletişim, Kardeşler, Yakın Çevre',
-    'Aile, Ev, Kökenler',
-    'Aşk, Çocuklar, Yaratıcılık',
-    'Sağlık, Günlük Rutinler, İş',
-    'İlişkiler, Evlilik, Ortaklıklar',
-    'Dönüşüm, Ölüm, Miras',
-    'Felsefe, Yabancı, Eğitim',
-    'Kariyer, Statü, Hedefler',
-    'Arkadaşlar, Topluluklar, Umutlar',
-    'Gizli, Bilinçaltı, Karmik'
-];
+// Gezegen sembolleri
+const planetSymbols = {
+    Sun: '☉',
+    Moon: '☽',
+    Mercury: '☿',
+    Venus: '♀',
+    Mars: '♂',
+    Jupiter: '♃',
+    Saturn: '♄',
+    Uranus: '♅',
+    Neptune: '♆',
+    Pluto: '♇'
+};
+
+const planetColors = {
+    Sun: '#FFD700',
+    Moon: '#C0C0C0',
+    Mercury: '#87CEEB',
+    Venus: '#FF69B4',
+    Mars: '#FF4500',
+    Jupiter: '#FFA500',
+    Saturn: '#DAA520',
+    Uranus: '#00CED1',
+    Neptune: '#4169E1',
+    Pluto: '#8B0000'
+};
 
 // Global değişkenler
-let currentBirthData = null;
+let currentChart = null;
+let canvas, ctx;
+let chartRotation = 0;
+let chartScale = 1;
+let isDragging = false;
+let lastX, lastY;
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
-    initializeStars();
     setupEventListeners();
     setDefaultDate();
-});
-
-// Yıldızları oluştur
-function initializeStars() {
-    const starsContainer = document.getElementById('stars-container');
-    const starCount = 150;
-    
-    for (let i = 0; i < starCount; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        star.style.animationDelay = `${Math.random() * 3}s`;
-        starsContainer.appendChild(star);
+    canvas = document.getElementById('astro-canvas');
+    if (canvas) {
+        ctx = canvas.getContext('2d');
+        setupCanvasInteraction();
     }
-}
+});
 
 // Event listener'ları ayarla
 function setupEventListeners() {
-    document.getElementById('calculate-chart').addEventListener('click', calculateChart);
+    document.getElementById('calculate-chart').addEventListener('click', calculateBirthChart);
     document.getElementById('new-calculation').addEventListener('click', resetForm);
+    document.getElementById('show-chart').addEventListener('click', toggleChartView);
     
-    const showChartBtn = document.getElementById('show-chart');
-    if (showChartBtn) {
-        showChartBtn.addEventListener('click', toggleChartView);
-    }
+    // Zoom kontrolleri
+    const zoomIn = document.getElementById('zoom-in');
+    const zoomOut = document.getElementById('zoom-out');
+    const rotateChart = document.getElementById('rotate-chart');
+    
+    if (zoomIn) zoomIn.addEventListener('click', () => zoomChart(1.2));
+    if (zoomOut) zoomOut.addEventListener('click', () => zoomChart(0.8));
+    if (rotateChart) rotateChart.addEventListener('click', () => rotateChartBy(30));
 }
 
-// Varsayılan tarih ayarla
+// Canvas interaksiyon
+function setupCanvasInteraction() {
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    
+    // Touch events
+    canvas.addEventListener('touchstart', startDrag);
+    canvas.addEventListener('touchmove', drag);
+    canvas.addEventListener('touchend', endDrag);
+    
+    // Wheel zoom
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        zoomChart(delta);
+    });
+}
+
+function startDrag(e) {
+    isDragging = true;
+    const pos = getEventPosition(e);
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function drag(e) {
+    if (!isDragging || !currentChart) return;
+    e.preventDefault();
+    
+    const pos = getEventPosition(e);
+    const dx = pos.x - lastX;
+    
+    chartRotation += dx * 0.5;
+    lastX = pos.x;
+    lastY = pos.y;
+    
+    drawBirthChart();
+}
+
+function endDrag() {
+    isDragging = false;
+}
+
+function getEventPosition(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+    };
+}
+
+function zoomChart(factor) {
+    chartScale *= factor;
+    chartScale = Math.max(0.5, Math.min(chartScale, 3));
+    if (currentChart) drawBirthChart();
+}
+
+function rotateChartBy(degrees) {
+    chartRotation += degrees;
+    if (currentChart) drawBirthChart();
+}
+
+// Varsayılan tarih
 function setDefaultDate() {
     const today = new Date();
     const dateInput = document.getElementById('birth-date');
@@ -90,90 +156,8 @@ function setDefaultDate() {
     dateInput.max = today.toISOString().split('T')[0];
 }
 
-// Güneş burcunu hesapla
-function calculateSunSign(month, day) {
-    for (let sign of zodiacSigns) {
-        const [startMonth, startDay] = sign.start;
-        const [endMonth, endDay] = sign.end;
-        
-        if (startMonth === endMonth) {
-            if (month === startMonth && day >= startDay && day <= endDay) {
-                return sign;
-            }
-        } else {
-            if ((month === startMonth && day >= startDay) || 
-                (month === endMonth && day <= endDay)) {
-                return sign;
-            }
-        }
-    }
-    return zodiacSigns[0];
-}
-
-// Yükselen burcunu hesapla
-function calculateRisingSign(date, time, latitude, longitude) {
-    try {
-        const [hours, minutes] = time.split(':').map(Number);
-        const birthDate = new Date(date);
-        birthDate.setHours(hours, minutes, 0, 0);
-        
-        // Local Sidereal Time hesapla
-        const lst = calculateLocalSiderealTime(birthDate, longitude);
-        
-        // Ascendant derece hesapla
-        const ascendantDegree = calculateAscendantDegree(lst, latitude);
-        
-        // Dereceyi burca çevir
-        const signIndex = Math.floor(ascendantDegree / 30);
-        return zodiacSigns[signIndex];
-    } catch (error) {
-        console.error('Yükselen hesaplama hatası:', error);
-        return zodiacSigns[0];
-    }
-}
-
-// Local Sidereal Time hesapla
-function calculateLocalSiderealTime(date, longitude) {
-    const J2000 = new Date('2000-01-01T12:00:00Z');
-    const daysSinceJ2000 = (date - J2000) / (1000 * 60 * 60 * 24);
-    
-    const hours = date.getHours() + date.getMinutes() / 60;
-    const ut = hours - 3; // UTC'ye çevir (Türkiye +3)
-    
-    const gmst = 18.697374558 + 24.06570982441908 * daysSinceJ2000 + ut * 1.00273790935;
-    const lst = gmst + (longitude / 15);
-    
-    return ((lst % 24) + 24) % 24;
-}
-
-// Ascendant derece hesapla
-function calculateAscendantDegree(lst, latitude) {
-    const lstDegrees = lst * 15;
-    const latRad = latitude * Math.PI / 180;
-    
-    // Basitleştirilmiş hesaplama
-    const mc = lstDegrees;
-    const asc = mc + 90 + (latitude / 2);
-    
-    return ((asc % 360) + 360) % 360;
-}
-
-// 12 evi hesapla
-function calculateHouses(risingSignIndex) {
-    const houses = [];
-    for (let i = 0; i < 12; i++) {
-        const signIndex = (risingSignIndex + i) % 12;
-        houses.push({
-            number: i + 1,
-            sign: zodiacSigns[signIndex],
-            meaning: housesMeanings[i]
-        });
-    }
-    return houses;
-}
-
-// Ana hesaplama fonksiyonu
-function calculateChart() {
+// Ana hesaplama
+async function calculateBirthChart() {
     const dateInput = document.getElementById('birth-date');
     const timeInput = document.getElementById('birth-time');
     const cityInput = document.getElementById('birth-city');
@@ -183,98 +167,241 @@ function calculateChart() {
         return;
     }
     
-    const birthDate = new Date(dateInput.value);
-    const month = birthDate.getMonth() + 1;
-    const day = birthDate.getDate();
-    
     const cityData = cityCoordinates[cityInput.value];
+    const [hours, minutes] = timeInput.value.split(':').map(Number);
     
-    // Güneş burcu
-    const sunSign = calculateSunSign(month, day);
+    // UTC tarih oluştur
+    const birthDate = new Date(dateInput.value);
+    birthDate.setHours(hours - cityData.tz, minutes, 0, 0);
     
-    // Yükselen burcu
-    const risingSign = calculateRisingSign(
-        dateInput.value,
-        timeInput.value,
-        cityData.lat,
-        cityData.lon
-    );
+    try {
+        // Gezegen pozisyonlarını hesapla
+        const planets = calculatePlanetPositions(birthDate);
+        
+        // Yükselen ve evleri hesapla
+        const houses = calculateHouses(birthDate, cityData.lat, cityData.lon);
+        
+        // Aspectleri hesapla
+        const aspects = calculateAspects(planets);
+        
+        currentChart = {
+            date: dateInput.value,
+            time: timeInput.value,
+            city: cityInput.value,
+            cityData: cityData,
+            planets: planets,
+            houses: houses,
+            aspects: aspects
+        };
+        
+        displayResults();
+        
+    } catch (error) {
+        console.error('Hesaplama hatası:', error);
+        alert('❌ Hesaplama sırasında bir hata oluştu!');
+    }
+}
+
+// Gezegen pozisyonlarını hesapla
+function calculatePlanetPositions(date) {
+    const observer = new Astronomy.Observer(39.9334, 32.8597, 0);
+    const planets = {};
     
-    // 12 ev
-    const risingIndex = zodiacSigns.findIndex(s => s.name === risingSign.name);
-    const houses = calculateHouses(risingIndex);
-    
-    // Sonuçları kaydet
-    currentBirthData = {
-        date: dateInput.value,
-        time: timeInput.value,
-        city: cityInput.value,
-        sunSign,
-        risingSign,
-        houses
+    // Güneş
+    const sun = Astronomy.SunPosition(date);
+    planets.Sun = {
+        longitude: Astronomy.EclipticLongitude(Astronomy.Body.Sun, date),
+        symbol: planetSymbols.Sun,
+        name: 'Güneş',
+        color: planetColors.Sun
     };
     
-    // Sonuçları göster
-    displayResults();
+    // Ay
+    planets.Moon = {
+        longitude: Astronomy.EclipticLongitude(Astronomy.Body.Moon, date),
+        symbol: planetSymbols.Moon,
+        name: 'Ay',
+        color: planetColors.Moon
+    };
+    
+    // Diğer gezegenler
+    const bodies = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
+    bodies.forEach(body => {
+        try {
+            planets[body] = {
+                longitude: Astronomy.EclipticLongitude(Astronomy.Body[body], date),
+                symbol: planetSymbols[body],
+                name: getTurkishPlanetName(body),
+                color: planetColors[body]
+            };
+        } catch (e) {
+            console.warn(`${body} hesaplanamadı:`, e);
+        }
+    });
+    
+    return planets;
+}
+
+function getTurkishPlanetName(planet) {
+    const names = {
+        Mercury: 'Merkür',
+        Venus: 'Venüs',
+        Mars: 'Mars',
+        Jupiter: 'Jüpiter',
+        Saturn: 'Satürn',
+        Uranus: 'Uranüs',
+        Neptune: 'Neptün',
+        Pluto: 'Plüton'
+    };
+    return names[planet] || planet;
+}
+
+// Evleri hesapla (Placidus sistemi)
+function calculateHouses(date, lat, lon) {
+    const lst = calculateLocalSiderealTime(date, lon);
+    const houses = [];
+    
+    // Basitleştirilmiş Placidus hesabı
+    const ascendant = calculateAscendant(lst, lat);
+    const mc = (lst * 15) % 360;
+    
+    houses.push(ascendant); // 1. Ev (Ascendant)
+    
+    for (let i = 1; i < 12; i++) {
+        let cusp;
+        if (i === 9) {
+            cusp = mc; // 10. Ev (MC)
+        } else if (i < 3 || i > 9) {
+            // 2, 3, 11, 12. evler - basit interpolasyon
+            cusp = (ascendant + (i * 30)) % 360;
+        } else {
+            // 4-9 arası evler
+            cusp = (mc + ((i - 9) * 30)) % 360;
+        }
+        houses.push(cusp);
+    }
+    
+    return houses;
+}
+
+function calculateLocalSiderealTime(date, longitude) {
+    const J2000 = new Date('2000-01-01T12:00:00Z');
+    const daysSinceJ2000 = (date - J2000) / (1000 * 60 * 60 * 24);
+    const hours = date.getUTCHours() + date.getUTCMinutes() / 60;
+    const gmst = 18.697374558 + 24.06570982441908 * daysSinceJ2000 + hours * 1.00273790935;
+    const lst = gmst + (longitude / 15);
+    return ((lst % 24) + 24) % 24;
+}
+
+function calculateAscendant(lst, latitude) {
+    const lstDegrees = lst * 15;
+    const latRad = latitude * Math.PI / 180;
+    const obliquity = 23.4397;
+    const oblRad = obliquity * Math.PI / 180;
+    
+    const y = Math.sin(lstDegrees * Math.PI / 180);
+    const x = Math.cos(lstDegrees * Math.PI / 180) * Math.cos(oblRad) + Math.tan(latRad) * Math.sin(oblRad);
+    
+    let asc = Math.atan2(y, x) * 180 / Math.PI;
+    asc = ((asc % 360) + 360) % 360;
+    
+    return asc;
+}
+
+// Aspectleri hesapla
+function calculateAspects(planets) {
+    const aspects = [];
+    const aspectTypes = [
+        { angle: 0, name: 'Conjunction', orb: 8, color: '#FFD700', strength: 'major' },
+        { angle: 60, name: 'Sextile', orb: 6, color: '#4169E1', strength: 'minor' },
+        { angle: 90, name: 'Square', orb: 8, color: '#E74C3C', strength: 'major' },
+        { angle: 120, name: 'Trine', orb: 8, color: '#27AE60', strength: 'major' },
+        { angle: 180, name: 'Opposition', orb: 8, color: '#E74C3C', strength: 'major' }
+    ];
+    
+    const planetKeys = Object.keys(planets);
+    
+    for (let i = 0; i < planetKeys.length; i++) {
+        for (let j = i + 1; j < planetKeys.length; j++) {
+            const p1 = planetKeys[i];
+            const p2 = planetKeys[j];
+            const angle = Math.abs(planets[p1].longitude - planets[p2].longitude);
+            const normalizedAngle = angle > 180 ? 360 - angle : angle;
+            
+            for (let aspectType of aspectTypes) {
+                if (Math.abs(normalizedAngle - aspectType.angle) <= aspectType.orb) {
+                    aspects.push({
+                        planet1: p1,
+                        planet2: p2,
+                        type: aspectType.name,
+                        angle: normalizedAngle,
+                        color: aspectType.color,
+                        strength: aspectType.strength
+                    });
+                    break;
+                }
+            }
+        }
+    }
+    
+    return aspects;
 }
 
 // Sonuçları göster
 function displayResults() {
-    const { sunSign, risingSign, houses } = currentBirthData;
-    
-    // Form gizle, sonuçları göster
     document.getElementById('birth-form').style.display = 'none';
     document.getElementById('results-panel').style.display = 'block';
     document.getElementById('controls').style.display = 'grid';
     
+    const { planets, houses } = currentChart;
+    
     // Güneş burcu
+    const sunLon = planets.Sun.longitude;
+    const sunSign = Math.floor(sunLon / 30);
     document.getElementById('sun-sign').innerHTML = `
-        <div style="font-size: 48px; text-align: center; margin: 15px 0;">${sunSign.symbol}</div>
-        <p><strong>Burç:</strong> ${sunSign.name}</p>
-        <p><strong>Element:</strong> ${sunSign.element}</p>
-        <p><strong>Nitelik:</strong> ${sunSign.quality}</p>
-        <p><strong>Yönetici Gezegen:</strong> ${sunSign.ruler}</p>
+        <div style="font-size: 48px; text-align: center; margin: 15px 0;">${zodiacSymbols[sunSign]}</div>
+        <p><strong>Burç:</strong> ${zodiacNames[sunSign]}</p>
+        <p><strong>Derece:</strong> ${(sunLon % 30).toFixed(2)}° ${zodiacNames[sunSign]}</p>
     `;
     
-    // Yükselen burcu
+    // Yükselen
+    const ascSign = Math.floor(houses[0] / 30);
     document.getElementById('rising-sign').innerHTML = `
-        <div style="font-size: 48px; text-align: center; margin: 15px 0;">${risingSign.symbol}</div>
-        <p><strong>Yükselen:</strong> ${risingSign.name}</p>
-        <p><strong>Element:</strong> ${risingSign.element}</p>
-        <p><strong>Nitelik:</strong> ${risingSign.quality}</p>
-        <p style="margin-top: 12px; color: rgba(255,255,255,0.7); font-size: 14px;">
-            Yükselen burcunuz dış kişiliğinizi, başkalarının sizi nasıl gördüğünü ve hayata yaklaşımınızı temsil eder.
-        </p>
+        <div style="font-size: 48px; text-align: center; margin: 15px 0;">${zodiacSymbols[ascSign]}</div>
+        <p><strong>Yükselen:</strong> ${zodiacNames[ascSign]}</p>
+        <p><strong>Derece:</strong> ${(houses[0] % 30).toFixed(2)}°</p>
     `;
     
-    // 12 ev
-    const housesHTML = houses.map(house => `
-        <div class="house-item">
-            <div class="house-number">${house.number}. Ev</div>
-            <div class="house-info">
-                <div class="house-name">${house.meaning}</div>
+    // 12 Ev
+    const housesHTML = houses.map((cusp, i) => {
+        const sign = Math.floor(cusp / 30);
+        return `
+            <div class="house-item">
+                <div class="house-number">${i + 1}. Ev</div>
+                <div class="house-info">
+                    <div class="house-name">${(cusp % 30).toFixed(1)}°</div>
+                </div>
+                <div class="house-sign">${zodiacSymbols[sign]}</div>
             </div>
-            <div class="house-sign">${house.sign.symbol}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     document.getElementById('houses').innerHTML = housesHTML;
     
-    // Diğer pozisyonlar
-    const moonSign = zodiacSigns[(zodiacSigns.findIndex(s => s.name === sunSign.name) + 2) % 12];
-    document.getElementById('other-positions').innerHTML = `
-        <p><strong>🌙 Ay Burcu (Tahmini):</strong> ${moonSign.symbol} ${moonSign.name}</p>
-        <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 8px;">
-            * Ay burcu kesin hesaplama için doğum anındaki ay pozisyonu gereklidir.
-        </p>
-        <div style="margin-top: 15px; padding: 12px; background: rgba(102,126,234,0.15); border-radius: 10px;">
-            <p style="font-size: 14px;"><strong>💡 İpucu:</strong></p>
-            <p style="font-size: 13px; margin-top: 5px;">
-                12 ev sistemi, hayatınızın farklı alanlarını temsil eder. Her ev bir burç tarafından yönetilir.
-            </p>
-        </div>
-    `;
+    // Gezegen pozisyonları
+    let planetsHTML = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">';
+    Object.entries(planets).forEach(([name, data]) => {
+        const sign = Math.floor(data.longitude / 30);
+        const degree = (data.longitude % 30).toFixed(1);
+        planetsHTML += `
+            <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                <strong>${data.symbol} ${data.name}</strong><br>
+                ${zodiacSymbols[sign]} ${degree}°
+            </div>
+        `;
+    });
+    planetsHTML += '</div>';
+    document.getElementById('other-positions').innerHTML = planetsHTML;
     
-    // Animasyon
     anime({
         targets: '.result-card',
         opacity: [0, 1],
@@ -285,24 +412,7 @@ function displayResults() {
     });
 }
 
-// Formu sıfırla
-function resetForm() {
-    document.getElementById('birth-form').style.display = 'block';
-    document.getElementById('results-panel').style.display = 'none';
-    document.getElementById('chart-wrapper').style.display = 'none';
-    document.getElementById('controls').style.display = 'none';
-    currentBirthData = null;
-    
-    anime({
-        targets: '.birth-info-form',
-        opacity: [0, 1],
-        scale: [0.95, 1],
-        duration: 400,
-        easing: 'easeOutQuad'
-    });
-}
-
-// Harita görünümünü aç/kapat
+// Harita görünümü
 function toggleChartView() {
     const chartWrapper = document.getElementById('chart-wrapper');
     const showChartBtn = document.getElementById('show-chart');
@@ -311,77 +421,180 @@ function toggleChartView() {
         chartWrapper.style.display = 'block';
         showChartBtn.textContent = '📋 Bilgilere Dön';
         initializeCanvas();
-        initializeVisualChart();
-        
-        anime({
-            targets: chartWrapper,
-            opacity: [0, 1],
-            scale: [0.9, 1],
-            duration: 600,
-            easing: 'easeOutQuad'
-        });
+        drawBirthChart();
     } else {
         chartWrapper.style.display = 'none';
         showChartBtn.textContent = '🎨 Haritayı Göster';
     }
 }
 
-// Canvas çizimini başlat
 function initializeCanvas() {
-    const canvas = document.getElementById('astro-canvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
     const wrapper = document.querySelector('.chart-wrapper');
-    
     canvas.width = wrapper.offsetWidth;
     canvas.height = wrapper.offsetHeight;
-    
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const maxRadius = Math.min(centerX, centerY) - 20;
-    
-    // Çemberler
-    ctx.strokeStyle = 'rgba(102, 126, 234, 0.3)';
-    ctx.lineWidth = 1;
-    
-    for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, maxRadius * (i / 3), 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    
-    // 12 bölüm çizgisi
-    for (let i = 0; i < 12; i++) {
-        const angle = (i * 30 - 90) * Math.PI / 180;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(
-            centerX + Math.cos(angle) * maxRadius,
-            centerY + Math.sin(angle) * maxRadius
-        );
-        ctx.stroke();
-    }
 }
 
-// Görsel haritayı başlat
-function initializeVisualChart() {
-    if (!currentBirthData) return;
+// Doğum haritasını çiz
+function drawBirthChart() {
+    if (!currentChart || !ctx) return;
     
-    const { houses } = currentBirthData;
+    const w = canvas.width;
+    const h = canvas.height;
+    const centerX = w / 2;
+    const centerY = h / 2;
+    const baseRadius = Math.min(w, h) * 0.4 * chartScale;
     
-    // Burç sembollerini yerleştir
-    const zodiacWheel = document.getElementById('zodiac-wheel');
-    if (zodiacWheel) {
-        anime({
-            targets: '.zodiac-sign',
-            opacity: [0, 1],
-            scale: [0.5, 1],
-            duration: 800,
-            delay: anime.stagger(60),
-            easing: 'easeOutElastic(1, .8)'
-        });
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(chartRotation * Math.PI / 180);
+    
+    // Arka plan
+    ctx.fillStyle = '#FAFAFA';
+    ctx.beginPath();
+    ctx.arc(0, 0, baseRadius * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Dış çember
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // İç çemberler
+    ctx.lineWidth = 1;
+    [0.3, 0.6, 0.85].forEach(ratio => {
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius * ratio, 0, Math.PI * 2);
+        ctx.stroke();
+    });
+    
+    // 12 burç bölümü
+    const { houses } = currentChart;
+    for (let i = 0; i < 12; i++) {
+        const angle = (houses[i] - 90) * Math.PI / 180;
+        
+        // Ev çizgileri
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(angle) * baseRadius, Math.sin(angle) * baseRadius);
+        ctx.stroke();
+        
+        // Burç sembolleri
+        const midAngle = angle + (15 * Math.PI / 180);
+        const textRadius = baseRadius * 0.93;
+        const sign = Math.floor(houses[i] / 30);
+        
+        ctx.save();
+        ctx.translate(Math.cos(midAngle) * textRadius, Math.sin(midAngle) * textRadius);
+        ctx.rotate(-chartRotation * Math.PI / 180);
+        ctx.fillStyle = zodiacColors[sign];
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(zodiacSymbols[sign], 0, 0);
+        ctx.restore();
     }
+    
+    // Aspectler (önce çiz ki üstte kalmasın)
+    drawAspects(baseRadius * 0.25);
+    
+    // Gezegenleri çiz
+    drawPlanets(baseRadius * 0.7);
+    
+    ctx.restore();
+    
+    // Legend güncelle
+    updateLegend();
+}
+
+function drawAspects(radius) {
+    const { planets, aspects } = currentChart;
+    
+    aspects.forEach(aspect => {
+        if (aspect.strength !== 'major') return; // Sadece major aspectler
+        
+        const p1Angle = (planets[aspect.planet1].longitude - 90) * Math.PI / 180;
+        const p2Angle = (planets[aspect.planet2].longitude - 90) * Math.PI / 180;
+        
+        ctx.strokeStyle = aspect.color;
+        ctx.lineWidth = aspect.type === 'Conjunction' ? 2 : 1;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(p1Angle) * radius, Math.sin(p1Angle) * radius);
+        ctx.lineTo(Math.cos(p2Angle) * radius, Math.sin(p2Angle) * radius);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    });
+}
+
+function drawPlanets(radius) {
+    const { planets } = currentChart;
+    
+    Object.entries(planets).forEach(([name, data]) => {
+        const angle = (data.longitude - 90) * Math.PI / 180;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        
+        // Gezegen sembolü
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-chartRotation * Math.PI / 180);
+        
+        // Arka plan
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = data.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Sembol
+        ctx.fillStyle = data.color;
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(data.symbol, 0, 0);
+        
+        ctx.restore();
+    });
+}
+
+function updateLegend() {
+    const legend = document.getElementById('chart-legend');
+    const { aspects } = currentChart;
+    
+    const majorAspects = aspects.filter(a => a.strength === 'major');
+    if (majorAspects.length === 0) {
+        legend.innerHTML = '<strong>Aspect yok</strong>';
+        return;
+    }
+    
+    let html = '<strong>Majör Aspectler:</strong> ';
+    html += majorAspects.slice(0, 5).map(a => {
+        const p1 = currentChart.planets[a.planet1];
+        const p2 = currentChart.planets[a.planet2];
+        return `${p1.symbol}${a.type === 'Trine' ? '△' : a.type === 'Square' ? '□' : '☍'}${p2.symbol}`;
+    }).join(' • ');
+    
+    if (majorAspects.length > 5) {
+        html += ` +${majorAspects.length - 5} daha`;
+    }
+    
+    legend.innerHTML = html;
+}
+
+// Form sıfırla
+function resetForm() {
+    document.getElementById('birth-form').style.display = 'block';
+    document.getElementById('results-panel').style.display = 'none';
+    document.getElementById('chart-wrapper').style.display = 'none';
+    document.getElementById('controls').style.display = 'none';
+    currentChart = null;
+    chartRotation = 0;
+    chartScale = 1;
 }
 
 // Giriş animasyonu

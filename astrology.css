@@ -202,13 +202,15 @@ body {
 .chart-wrapper {
     position: relative;
     width: 100%;
-    max-width: 400px;
-    height: 400px;
+    max-width: 100vw;
+    height: 100vw;
+    max-height: 500px;
     margin: 0 auto 25px;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-    border-radius: 50%;
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    box-shadow: 0 0 50px rgba(102, 126, 234, 0.2);
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    touch-action: none;
 }
 
 #astro-canvas {
@@ -217,7 +219,60 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    cursor: grab;
+}
+
+#astro-canvas:active {
+    cursor: grabbing;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+}
+
+.zoom-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #333;
+    touch-action: manipulation;
+}
+
+.zoom-btn:active {
+    transform: scale(0.9);
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+}
+
+.chart-legend {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 11px;
+    color: #333;
+    max-height: 100px;
+    overflow-y: auto;
+    z-index: 50;
 }
 
 /* Merkez Güneş */
