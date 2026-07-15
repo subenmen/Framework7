@@ -66,43 +66,205 @@ Bu proje KUBEY yazılım firması için geliştirilmiştir.
 
 ---
 
-## 🌌 İnteraktif Astroloji Haritası
+## 🌌 Profesyonel Astroloji Haritası
 
-### Özellikler
+### ✨ Ana Özellikler
 
-- **12 Burç Sembolü**: Dairesel dizilimde yerleştirilmiş
-- **6 Gezegen**: Sürüklenebilir gezegen sembolleri
-- **Hareket Ettirilebilir**: Tüm gezegenler ve merkez güneş sürüklenebilir
-- **Döndürülebilir Burç Çemberi**: Burç halkası döndürülebilir
-- **200+ Yıldız**: Parıldayan yıldız animasyonları
-- **Bilgi Paneli**: Burç ve gezegen bilgileri
-- **Canvas Çemberleri**: Yörünge çizgileri ve radyal hatlar
+#### 📋 Doğum Bilgileri Formu
+- **Ad Soyad**: Kişisel bilgi
+- **Doğum Tarihi & Saati**: Tarih ve saat seçimi
+- **Konum**: Şehir, enlem ve boylam
+- **Dinamik Hesaplama**: Gerçek zamanlı harita oluşturma
 
-### İnteraktif Kontroller
+#### 🏠 12 Ev Sistemi (Houses)
+- **Placidus Sistemi**: Profesyonel ev hesaplamaları
+- **Görsel Temsil**: Her evin net çizimi
+- **Ev Numaraları**: 1-12 arası ev işaretleri
+- **Açık/Kapalı**: Evleri göster/gizle özelliği
 
-- ↶/↷ **Döndürme Butonları**: Burç çemberini 30° döndür
-- 🔄 **Sıfırla**: Tüm elementleri başlangıç pozisyonuna döndür
-- ⏯️ **Animasyon**: Sürekli animasyonları aç/kapat
-- **Sürükle & Bırak**: Gezegenleri istediğiniz yere taşıyın
-- **Tıklama**: Burç ve gezegen bilgilerini görüntüle
+#### ⭐ Aspectler (Gezegen Açıları)
+- **Conjunction** ☌ (0°) - Kavuşum, güçlü birleşme
+- **Opposition** ☍ (180°) - Karşıtlık, gerilim
+- **Trine** △ (120°) - Uyum, kolay akış
+- **Square** □ (90°) - Zorluk, büyüme fırsatı
+- **Sextile** ⚹ (60°) - Fırsat, kolaylık
+- **Renkli Çizgiler**: Her aspect tipi farklı renkte
+- **Aspect Tablosu**: Detaylı liste görünümü
+- **Açık/Kapalı**: Aspectleri göster/gizle
 
-### Klavye Kısayolları
+#### 🪐 10 Gezegen & Gök Cismi
+- **☉ Güneş** - Ego, kimlik, yaşam gücü
+- **☽ Ay** - Duygular, içgüdüler, alışkanlıklar
+- **☿ Merkür** - İletişim, zeka, düşünce
+- **♀ Venüs** - Aşk, güzellik, uyum
+- **♂ Mars** - Enerji, cesaret, hırs
+- **♃ Jüpiter** - Şans, genişleme, bilgelik
+- **♄ Satürn** - Disiplin, sorumluluk, sınırlar
+- **♅ Uranüs** - Devrim, özgünlük, değişim
+- **♆ Neptün** - Rüyalar, hayal, sezgi
+- **♇ Plüton** - Dönüşüm, güç, yeniden doğuş
 
-- `←/→` - Burç çemberini döndür
-- `R` - Sıfırla
-- `Space` - Animasyonları duraklat/başlat
+#### 📍 Özel Noktalar
+- **AC (Ascendant)** - Yükselen burç, kişilik maskesi
+- **MC (Midheaven)** - Orta gökyüzü, kariyer ve yaşam yolu
 
-### Gezegen ve Burç Bilgileri
+#### 📊 Derece ve Pozisyon Bilgileri
+- Her gezegenin burçtaki derece konumu
+- Örnek: 14° ♒ Kova - 14 derece Kova burcunda
+- Dakika hassasiyetinde gösterim
 
-Harita üzerinde:
-- **Merkür** ☿ - İletişim, zeka
-- **Venüs** ♀ - Aşk, güzellik
-- **Mars** ♂ - Enerji, cesaret
-- **Jüpiter** ♃ - Şans, genişleme
-- **Satürn** ♄ - Disiplin, sorumluluk
-- **Ay** ☽ - Duygular, içgüdüler
+### 🎯 Kullanım Rehberi
 
-12 burç sembolü ve detaylı bilgileri içerir.
+1. **Bilgileri Girin**: Doğum bilgilerini forma yazın
+2. **Harita Oluştur**: "✨ Harita Oluştur" butonuna tıklayın
+3. **Keşfedin**: Gezegenlere tıklayarak detaylı bilgi görün
+4. **Özelleştirin**: Kontrol butonları ile görünümü ayarlayın
+5. **İnceleyin**: Aspect tablosunu ve ev sistemini inceleyin
+
+### 🎮 İnteraktif Kontroller
+
+- **↶/↷ Döndürme**: Haritayı 30° döndür
+- **🔄 Sıfırla**: Başlangıç konumuna dön
+- **🔗 Aspectler**: Aspect çizgilerini göster/gizle
+- **🏠 Evler**: Ev sistemini göster/gizle
+- **🖱️ Tıklama**: Gezegen bilgilerini görüntüle
+
+### 🔢 Astrolojik Hesaplamalar
+
+#### Gezegen Pozisyonları
+- Doğum tarih ve saatine göre gezegen konumları
+- 360 derece ekliptik üzerinde konumlandırma
+- Burç ve derece hesaplamaları
+
+#### Ascendant Hesaplama
+```
+Ascendant = (GünSayısı × 0.986 + SaatOndalık × 15 + Boylam) % 360
+```
+
+#### Midheaven
+```
+Midheaven = (Ascendant + 90) % 360
+```
+
+#### Ev Sistemi
+- Placidus bazlı (basitleştirilmiş)
+- Ascendant'tan başlayarak 30° aralıklarla
+- Her ev bir burç aralığını kapsar
+
+#### Aspect Hesaplama
+- İki gezegen arasındaki açı farkı
+- Orb toleransı (6-8 derece)
+- Tip belirleme (conjunction, trine, vb.)
+
+### 🎨 Görsel Tasarım
+
+#### Renk Kodları
+- **Güneş**: Altın (#FFD700)
+- **Ay**: Gümüş (#C0C0C0)
+- **Merkür**: Gri (#A9A9A9)
+- **Venüs**: Pembe (#FFB6C1)
+- **Mars**: Kırmızı (#FF4500)
+- **Jüpiter**: Turuncu (#FFA500)
+- **Satürn**: Altın Sarısı (#DAA520)
+- **Uranüs**: Turkuaz (#00CED1)
+- **Neptün**: Kraliyet Mavisi (#4169E1)
+- **Plüton**: Koyu Kırmızı (#8B0000)
+
+#### Aspect Renkleri
+- **Conjunction**: Altın (#FFD700)
+- **Opposition**: Kırmızı (#FF0000)
+- **Trine**: Yeşil (#00FF00)
+- **Square**: Kırmızı (#FF0000)
+- **Sextile**: Açık Mavi (#00BFFF)
+
+### 💡 Özellik Detayları
+
+#### Canvas Çizimleri
+- Ana dairesel çizgiler (3 katman)
+- Ev ayırıcı çizgiler
+- Aspect bağlantı çizgileri
+- Radyal yörünge hatları
+
+#### Animasyonlar (Anime.js)
+- Gezegen hover efektleri
+- Form geçiş animasyonları
+- Burç parıldama efektleri
+- Harita dönme animasyonları
+
+#### Responsive Tasarım
+- Mobil optimizasyonu (768px breakpoint)
+- Dokunmatik ekran desteği
+- Dinamik boyutlandırma
+- Grid tabanlı form düzeni
+
+### 📱 Responsive Özellikler
+
+**Desktop (>768px)**
+- 700×700px harita
+- 6 sütunlu form grid
+- Büyük gezegen sembolleri
+
+**Mobile (≤768px)**
+- Ekran genişliğine göre harita (max 500px)
+- Tek sütunlu form
+- Optimize edilmiş yazı boyutları
+
+### 🔬 Teknik Detaylar
+
+#### Veri Yapısı
+```javascript
+chartData = {
+    name: String,
+    birthDate: String,
+    birthTime: String,
+    city: String,
+    latitude: Number,
+    longitude: Number,
+    planets: {
+        [planetKey]: {
+            longitude: Number,
+            sign: {
+                name: String,
+                symbol: String,
+                degree: Number,
+                minutes: Number
+            }
+        }
+    },
+    houses: Array[12],
+    ascendant: Number,
+    midheaven: Number,
+    aspects: Array
+}
+```
+
+#### JavaScript Modülleri
+- `calculateChart()` - Ana hesaplama fonksiyonu
+- `calculatePlanetPositions()` - Gezegen konumları
+- `calculateHouses()` - Ev hesaplamaları
+- `calculateAspects()` - Aspect analizi
+- `drawChart()` - Canvas çizim sistemi
+
+### 📚 Referanslar
+
+Bu harita şunları içerir:
+- ✅ Placidus ev sistemi
+- ✅ 10 ana gök cismi
+- ✅ 5 ana aspect tipi
+- ✅ Ascendant ve MC hesaplamaları
+- ✅ Burç derece pozisyonları
+- ✅ Görsel aspect çizgileri
+
+### ⚠️ Önemli Notlar
+
+**Hesaplama Hassasiyeti**: 
+Bu uygulama eğitim amaçlı basitleştirilmiş hesaplamalar kullanır. Profesyonel astroloji için Swiss Ephemeris gibi astronomik kütüphaneler önerilir.
+
+**Timezone**: 
+Şu anki sürüm timezone dönüşümlerini içermez. UTC ve yerel saat manuel olarak girilmelidir.
+
+**Gerçek Zamanlı Veriler**: 
+Gezegen pozisyonları matematiksel yaklaşımlarla hesaplanır, NASA JPL verileri kullanılmaz.
 
 ---
 
