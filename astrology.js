@@ -358,13 +358,16 @@ function drawHouses() {
 
 // Burç sembollerini çiz
 function drawZodiacSigns() {
+    const wrapper = document.querySelector('.chart-wrapper');
+    const center = wrapper.offsetWidth / 2 || 350;
+    
     zodiacSigns.forEach((sign, index) => {
         const angle = (sign.start + 15 - chartData.ascendant - 90) * Math.PI / 180;
         const signElement = document.querySelector(`[data-sign="${sign.key}"]`);
         if (signElement) {
             const radius = 290;
-            const x = 350 + Math.cos(angle) * radius;
-            const y = 350 + Math.sin(angle) * radius;
+            const x = center + Math.cos(angle) * radius;
+            const y = center + Math.sin(angle) * radius;
             
             signElement.style.left = x + 'px';
             signElement.style.top = y + 'px';
@@ -374,6 +377,9 @@ function drawZodiacSigns() {
 
 // Gezegenleri çiz
 function drawPlanets() {
+    const wrapper = document.querySelector('.chart-wrapper');
+    const center = wrapper.offsetWidth / 2 || 350;
+    
     Object.entries(chartData.planets).forEach(([planetKey, planetData]) => {
         const planetElement = document.getElementById(planetKey);
         if (!planetElement) return;
@@ -381,8 +387,8 @@ function drawPlanets() {
         const angle = (planetData.longitude - chartData.ascendant - 90) * Math.PI / 180;
         const radius = 265;
         
-        const x = 350 + Math.cos(angle) * radius - 35;
-        const y = 350 + Math.sin(angle) * radius - 35;
+        const x = center + Math.cos(angle) * radius - 35;
+        const y = center + Math.sin(angle) * radius - 35;
         
         planetElement.style.left = x + 'px';
         planetElement.style.top = y + 'px';
@@ -449,19 +455,22 @@ function drawAspects() {
 
 // Özel noktaları çiz (AC, MC)
 function drawSpecialPoints() {
+    const wrapper = document.querySelector('.chart-wrapper');
+    const center = wrapper.offsetWidth / 2 || 350;
+    
     // Ascendant
     const ascElement = document.getElementById('ascendant');
     const ascAngle = (-90) * Math.PI / 180;
-    const ascX = 350 + Math.cos(ascAngle) * 310 - 25;
-    const ascY = 350 + Math.sin(ascAngle) * 310 - 25;
+    const ascX = center + Math.cos(ascAngle) * 310 - 25;
+    const ascY = center + Math.sin(ascAngle) * 310 - 25;
     ascElement.style.left = ascX + 'px';
     ascElement.style.top = ascY + 'px';
     
     // Midheaven
     const mcElement = document.getElementById('midheaven');
     const mcAngle = (0) * Math.PI / 180;
-    const mcX = 350 + Math.cos(mcAngle) * 310 - 25;
-    const mcY = 350 + Math.sin(mcAngle) * 310 - 25;
+    const mcX = center + Math.cos(mcAngle) * 310 - 25;
+    const mcY = center + Math.sin(mcAngle) * 310 - 25;
     mcElement.style.left = mcX + 'px';
     mcElement.style.top = mcY + 'px';
 }
@@ -554,10 +563,16 @@ function initializeStars() {
 
 // Canvas başlangıç
 function initializeCanvas() {
-    const canvas = document.getElementById('astro-canvas');
     const wrapper = document.querySelector('.chart-wrapper');
-    canvas.width = 700;
-    canvas.height = 700;
+    const astroCanvas = document.getElementById('astro-canvas');
+    const aspectsCanvas = document.getElementById('aspects-canvas');
+    
+    const size = wrapper.offsetWidth || 700;
+    
+    astroCanvas.width = size;
+    astroCanvas.height = size;
+    aspectsCanvas.width = size;
+    aspectsCanvas.height = size;
 }
 
 // Kontrol butonları
