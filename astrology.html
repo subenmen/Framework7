@@ -3,227 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>KUBEY - Profesyonel Astroloji Haritası</title>
-    
-    <script>
-        // GERÇEK VERSİYON NUMARASI (Her düzenlemede yükselir)
-        window.APP_VERSION = '2.1.4';
-        window.BUILD_DATE = '15.07.2026';
-        
-        // Cache busting için timestamp (sadece arka planda kullanılır)
-        window.CACHE_BUSTER = Date.now();
-        
-        // CSS'i dinamik yükle
-        const cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = 'astrology.css?v=' + CACHE_BUSTER;
-        document.head.appendChild(cssLink);
-        
-        // Cache temizleme
-        const lastVersion = localStorage.getItem('astro_version');
-        if (lastVersion !== APP_VERSION) {
-            if ('caches' in window) {
-                caches.keys().then(names => {
-                    names.forEach(name => caches.delete(name));
-                });
-            }
-            localStorage.setItem('astro_version', APP_VERSION);
-            console.log('✅ Yeni versiyon yüklendi: v' + APP_VERSION);
-        }
-    </script>
+    <title>KUBEY - Astroloji Haritası v3.0.0</title>
+    <link rel="stylesheet" href="astrology.css?v=3.0.0">
 </head>
 <body>
-    <div class="astro-container">
+    <div class="container">
         <!-- Header -->
-        <div class="header">
-            <h1 class="title">🌌 Profesyonel Astroloji Haritası</h1>
-            <p class="subtitle">Doğum bilgilerinizi girin ve kişisel haritanızı oluşturun</p>
-            <div class="version-info" id="version-info">
-                <span>📦 Versiyon: <span id="app-version" style="color: #4ade80;">Yükleniyor...</span></span>
-                <span style="margin-left: 15px;">📅 <span id="build-date"></span></span>
-            </div>
-        </div>
+        <header>
+            <h1>🌌 Astroloji Haritası</h1>
+            <p class="version">v3.0.0 - 15.07.2026</p>
+        </header>
 
-        <!-- Doğum Bilgileri Formu -->
-        <div class="birth-form" id="birth-form">
-            <h3>📋 Doğum Bilgileri</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>📅 Doğum Tarihi</label>
-                    <input type="date" id="birth-date" value="1993-01-31">
+        <!-- Form -->
+        <div class="form-card">
+            <h2>📋 Doğum Bilgileri</h2>
+            <form id="birth-form" onsubmit="return false;">
+                <div class="form-row">
+                    <label>📅 Tarih</label>
+                    <input type="date" id="birth-date" value="1993-01-31" required>
                 </div>
-                <div class="form-group">
-                    <label>🕐 Doğum Saati</label>
-                    <input type="time" id="birth-time" value="15:00">
+                <div class="form-row">
+                    <label>🕐 Saat</label>
+                    <input type="time" id="birth-time" value="15:00" required>
                 </div>
-                <div class="form-group">
-                    <label>📍 Doğum Yeri</label>
-                    <select id="city">
+                <div class="form-row">
+                    <label>📍 Şehir</label>
+                    <select id="city" required>
                         <option value="ankara" data-lat="39.93" data-lon="32.85" selected>Ankara</option>
                         <option value="istanbul" data-lat="41.01" data-lon="28.98">İstanbul</option>
                         <option value="izmir" data-lat="38.42" data-lon="27.14">İzmir</option>
-                        <option value="antalya" data-lat="36.89" data-lon="30.70">Antalya</option>
-                        <option value="bursa" data-lat="40.19" data-lon="29.06">Bursa</option>
-                        <option value="adana" data-lat="37.00" data-lon="35.32">Adana</option>
-                        <option value="gaziantep" data-lat="37.07" data-lon="37.38">Gaziantep</option>
-                        <option value="konya" data-lat="37.87" data-lon="32.48">Konya</option>
-                        <option value="kayseri" data-lat="38.73" data-lon="35.48">Kayseri</option>
-                        <option value="mersin" data-lat="36.81" data-lon="34.64">Mersin</option>
-                        <option value="eskisehir" data-lat="39.78" data-lon="30.52">Eskişehir</option>
-                        <option value="diyarbakir" data-lat="37.91" data-lon="40.24">Diyarbakır</option>
-                        <option value="samsun" data-lat="41.29" data-lon="36.33">Samsun</option>
-                        <option value="denizli" data-lat="37.77" data-lon="29.09">Denizli</option>
-                        <option value="trabzon" data-lat="41.00" data-lon="39.72">Trabzon</option>
-                        <option value="malatya" data-lat="38.35" data-lon="38.31">Malatya</option>
-                        <option value="erzurum" data-lat="39.90" data-lon="41.27">Erzurum</option>
-                        <option value="van" data-lat="38.49" data-lon="43.38">Van</option>
-                        <option value="batman" data-lat="37.89" data-lon="41.13">Batman</option>
-                        <option value="elazig" data-lat="38.68" data-lon="39.23">Elazığ</option>
                     </select>
                 </div>
-            </div>
-            <button id="generate-chart" class="generate-btn" onclick="window.generateChartNow && window.generateChartNow()">✨ Harita Oluştur</button>
-            <button id="test-chart" class="control-btn" style="margin-top: 10px; width: 100%;" onclick="window.testChartNow && window.testChartNow()">🧪 Test Haritası (31 Ocak 1993, 15:00, Ankara)</button>
+                <button type="button" onclick="createChart()" class="btn-primary">✨ Harita Oluştur</button>
+            </form>
         </div>
 
-        <!-- Ana Astroloji Haritası -->
-        <div class="chart-wrapper" id="chart-wrapper">
-            <canvas id="astro-canvas"></canvas>
-            
-            <!-- Aspects Canvas (gezegen bağlantıları) -->
-            <canvas id="aspects-canvas"></canvas>
-            
-            <!-- 12 Ev Sistemi -->
-            <div class="houses-wheel" id="houses-wheel"></div>
-
-            <!-- 12 Burç -->
-            <div class="zodiac-wheel" id="zodiac-wheel">
-                <!-- Burçlar JavaScript ile dinamik oluşturulur -->
+        <!-- Chart -->
+        <div class="chart-card">
+            <h2>🔮 Doğum Haritası</h2>
+            <div id="chart-area">
+                <canvas id="chart-canvas" width="600" height="600"></canvas>
+                <div id="chart-elements"></div>
             </div>
-
-            <!-- Gezegenler ve Noktalar -->
-            <div class="planets-container" id="planets-container">
-                <div class="planet" id="sun" data-planet="sun" data-degree="0">
-                    <span class="planet-symbol">☉</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="moon" data-planet="moon" data-degree="0">
-                    <span class="planet-symbol">☽</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="mercury" data-planet="mercury" data-degree="0">
-                    <span class="planet-symbol">☿</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="venus" data-planet="venus" data-degree="0">
-                    <span class="planet-symbol">♀</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="mars" data-planet="mars" data-degree="0">
-                    <span class="planet-symbol">♂</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="jupiter" data-planet="jupiter" data-degree="0">
-                    <span class="planet-symbol">♃</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="saturn" data-planet="saturn" data-degree="0">
-                    <span class="planet-symbol">♄</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="uranus" data-planet="uranus" data-degree="0">
-                    <span class="planet-symbol">♅</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="neptune" data-planet="neptune" data-degree="0">
-                    <span class="planet-symbol">♆</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-                <div class="planet" id="pluto" data-planet="pluto" data-degree="0">
-                    <span class="planet-symbol">♇</span>
-                    <span class="planet-degree">0°</span>
-                </div>
-            </div>
-            
-            <!-- Ascendant ve MC İşaretleri -->
-            <div class="special-point" id="ascendant" data-point="asc">
-                <span class="point-symbol">AC</span>
-            </div>
-            <div class="special-point" id="midheaven" data-point="mc">
-                <span class="point-symbol">MC</span>
-            </div>
-
-            <!-- Yıldızlar -->
-            <div class="stars-container" id="stars-container"></div>
         </div>
 
-        <!-- Kontrol Paneli -->
-        <div class="controls">
-            <button id="rotate-left" class="control-btn">↶ Sola Döndür</button>
-            <button id="rotate-right" class="control-btn">↷ Sağa Döndür</button>
-            <button id="reset-chart" class="control-btn">🔄 Sıfırla</button>
-            <button id="toggle-aspects" class="control-btn">🔗 Aspectler</button>
-            <button id="toggle-houses" class="control-btn">🏠 Evler</button>
-        </div>
-
-        <!-- Bilgi Paneli -->
-        <div class="info-panel" id="info-panel">
-            <h3>🔮 Doğum Haritası Bilgileri</h3>
+        <!-- Info -->
+        <div class="info-card">
+            <h3 id="info-title">Bilgi</h3>
             <div id="info-content">
-                <p>Lütfen doğum bilgilerinizi girin ve harita oluştur butonuna tıklayın</p>
+                <p>Formu doldurup "Harita Oluştur" butonuna basın.</p>
             </div>
         </div>
-
-        <!-- Aspect Tablosu -->
-        <div class="aspects-table" id="aspects-table">
-            <h3>⭐ Aspectler</h3>
-            <div id="aspects-list"></div>
-        </div>
-
-        <!-- Geri Dön Butonu -->
-        <a href="index.html" class="back-btn">← Ana Sayfa</a>
     </div>
 
-    <!-- Anime.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script>
-        // JavaScript yükleme kontrolü
-        console.log('📦 Script yükleme başladı...');
-        
-        // CACHE_BUSTER tanımlı mı kontrol et
-        if (typeof window.CACHE_BUSTER === 'undefined') {
-            console.error('❌ CACHE_BUSTER tanımlı değil!');
-            window.CACHE_BUSTER = Date.now();
-        }
-        
-        // Script'i yükle
-        const scriptTag = document.createElement('script');
-        scriptTag.src = 'astrology.js?v=' + window.CACHE_BUSTER;
-        scriptTag.async = false; // Sıralı yükleme için
-        scriptTag.onerror = function() {
-            console.error('❌ astrology.js yüklenemedi!');
-        };
-        scriptTag.onload = function() {
-            console.log('✅ astrology.js yüklendi');
-            
-            // Versiyon bilgisini göster
-            const versionElement = document.getElementById('app-version');
-            const buildDateElement = document.getElementById('build-date');
-            
-            if (versionElement && window.APP_VERSION) {
-                versionElement.textContent = 'v' + window.APP_VERSION;
-            }
-            
-            if (buildDateElement && window.BUILD_DATE) {
-                buildDateElement.textContent = window.BUILD_DATE;
-            }
-            
-            console.log('🚀 KUBEY Astroloji v' + window.APP_VERSION + ' - ' + window.BUILD_DATE);
-        };
-        document.body.appendChild(scriptTag);
-    </script>
+    <script src="astrology.js?v=3.0.0"></script>
 </body>
 </html>
