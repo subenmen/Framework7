@@ -403,12 +403,21 @@ function drawHouses() {
 
 // Burç sembollerini çiz
 function drawZodiacSigns() {
+    console.log('🌟 Burçlar çiziliyor...');
+    
     const wrapper = document.querySelector('.chart-wrapper');
+    if (!wrapper) {
+        console.error('❌ chart-wrapper bulunamadı!');
+        return;
+    }
+    
     const center = wrapper.offsetWidth / 2 || 350;
+    let drawnCount = 0;
     
     zodiacSigns.forEach((sign, index) => {
         const angle = (sign.start + 15 - chartData.ascendant - 90) * Math.PI / 180;
         const signElement = document.querySelector(`[data-sign="${sign.key}"]`);
+        
         if (signElement) {
             const radius = 290;
             const x = center + Math.cos(angle) * radius;
@@ -417,18 +426,34 @@ function drawZodiacSigns() {
             signElement.style.left = x + 'px';
             signElement.style.top = y + 'px';
             signElement.style.transform = 'translate(-50%, -50%)';
+            drawnCount++;
+        } else {
+            console.warn('⚠️ Burç elementi bulunamadı:', sign.key);
         }
     });
+    
+    console.log('✅ Burçlar çizildi:', drawnCount + '/12');
 }
 
 // Gezegenleri çiz
 function drawPlanets() {
+    console.log('🪐 Gezegenler çiziliyor...');
+    
     const wrapper = document.querySelector('.chart-wrapper');
+    if (!wrapper) {
+        console.error('❌ chart-wrapper bulunamadı!');
+        return;
+    }
+    
     const center = wrapper.offsetWidth / 2 || 350;
+    let drawnCount = 0;
     
     Object.entries(chartData.planets).forEach(([planetKey, planetData]) => {
         const planetElement = document.getElementById(planetKey);
-        if (!planetElement) return;
+        if (!planetElement) {
+            console.warn('⚠️ Gezegen elementi bulunamadı:', planetKey);
+            return;
+        }
         
         const angle = (planetData.longitude - chartData.ascendant - 90) * Math.PI / 180;
         const radius = 265;
@@ -453,7 +478,11 @@ function drawPlanets() {
         
         // Click event
         planetElement.onclick = () => showPlanetInfo(planetKey);
+        
+        drawnCount++;
     });
+    
+    console.log('✅ Gezegenler çizildi:', drawnCount + '/10');
 }
 
 // Aspectleri çiz
@@ -612,9 +641,21 @@ function initializeStars() {
 
 // Canvas başlangıç
 function initializeCanvas() {
+    console.log('🎨 Canvas başlatılıyor...');
+    
     const wrapper = document.querySelector('.chart-wrapper');
+    if (!wrapper) {
+        console.error('❌ chart-wrapper bulunamadı!');
+        return;
+    }
+    
     const astroCanvas = document.getElementById('astro-canvas');
     const aspectsCanvas = document.getElementById('aspects-canvas');
+    
+    if (!astroCanvas || !aspectsCanvas) {
+        console.error('❌ Canvas elementleri bulunamadı!');
+        return;
+    }
     
     const size = wrapper.offsetWidth || 700;
     
@@ -622,6 +663,8 @@ function initializeCanvas() {
     astroCanvas.height = size;
     aspectsCanvas.width = size;
     aspectsCanvas.height = size;
+    
+    console.log('✅ Canvas başlatıldı:', size + 'x' + size);
 }
 
 // Kontrol butonları
