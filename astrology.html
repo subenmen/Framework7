@@ -10,7 +10,7 @@
     
     <script>
         // GERÇEK VERSİYON NUMARASI (Her düzenlemede yükselir)
-        window.APP_VERSION = '2.1.1';
+        window.APP_VERSION = '2.1.2';
         window.BUILD_DATE = '15.07.2026';
         
         // Cache busting için timestamp (sadece arka planda kullanılır)
@@ -190,19 +190,34 @@
     <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script>
-        // JavaScript'i cache-buster ile yükle
+        // JavaScript yükleme kontrolü
+        console.log('📦 Script yükleme başladı...');
+        
+        // CACHE_BUSTER tanımlı mı kontrol et
+        if (typeof window.CACHE_BUSTER === 'undefined') {
+            console.error('❌ CACHE_BUSTER tanımlı değil!');
+            window.CACHE_BUSTER = Date.now();
+        }
+        
+        // Script'i yükle
         const scriptTag = document.createElement('script');
         scriptTag.src = 'astrology.js?v=' + window.CACHE_BUSTER;
+        scriptTag.async = false; // Sıralı yükleme için
+        scriptTag.onerror = function() {
+            console.error('❌ astrology.js yüklenemedi!');
+        };
         scriptTag.onload = function() {
+            console.log('✅ astrology.js yüklendi');
+            
             // Versiyon bilgisini göster
             const versionElement = document.getElementById('app-version');
             const buildDateElement = document.getElementById('build-date');
             
-            if (versionElement) {
+            if (versionElement && window.APP_VERSION) {
                 versionElement.textContent = 'v' + window.APP_VERSION;
             }
             
-            if (buildDateElement) {
+            if (buildDateElement && window.BUILD_DATE) {
                 buildDateElement.textContent = window.BUILD_DATE;
             }
             
