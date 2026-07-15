@@ -346,39 +346,68 @@ function getTurkishPlanetName(planet) {
     return names[planet] || planet;
 }
 
-// Evleri hesapla (Placidus sistemi - basitleştirilmiş)
+// Evleri hesapla (Placidus benzeri - basitleştirilmiş)
 function calculateHouses(date, lat, lon) {
     try {
         const lst = calculateLocalSiderealTime(date, lon);
-        const houses = [];
         
-        // 1. Ev - Ascendant
+        // 1. Ev (Ascendant) - Doğu horizonu
         const ascendant = calculateAscendant(lst, lat);
         
-        // 10. Ev - MC (Midheaven)
+        // 10. Ev (MC - Midheaven) - Üst meridyen
         const mc = (lst * 15) % 360;
         
-        // 12 evi hesapla
-        houses[0] = ascendant;           // 1. Ev (Asc)
-        houses[1] = (ascendant + 30) % 360;   // 2. Ev
-        houses[2] = (ascendant + 60) % 360;   // 3. Ev
-        houses[3] = (mc + 180) % 360;    // 4. Ev (IC)
-        houses[4] = (mc + 210) % 360;    // 5. Ev
-        houses[5] = (mc + 240) % 360;    // 6. Ev
-        houses[6] = (ascendant + 180) % 360;  // 7. Ev (Desc)
-        houses[7] = (ascendant + 210) % 360;  // 8. Ev
-        houses[8] = (ascendant + 240) % 360;  // 9. Ev
-        houses[9] = mc;                  // 10. Ev (MC)
-        houses[10] = (mc + 30) % 360;    // 11. Ev
-        houses[11] = (mc + 60) % 360;    // 12. Ev
+        // 4. Ev (IC - Imum Coeli) - Alt meridyen (MC'nin 180° karşısı)
+        const ic = (mc + 180) % 360;
+        
+        // 7. Ev (Descendant) - Batı horizonu (Ascendant'ın 180° karşısı)
+        const descendant = (ascendant + 180) % 360;
+        
+        // Basitleştirilmiş Placidus: Ara evleri hesapla
+        // MC'den ASC'ye giderken (saat yönünün tersine)
+        const houses = [];
+        
+        houses[0] = ascendant;                    // 1. Ev (ASC)
+        houses[1] = interpolateHouse(ascendant, ic, 2/3);  // 2. Ev
+        houses[2] = interpolateHouse(ascendant, ic, 1/3);  // 3. Ev
+        houses[3] = ic;                           // 4. Ev (IC)
+        houses[4] = interpolateHouse(ic, descendant, 2/3); // 5. Ev
+        houses[5] = interpolateHouse(ic, descendant, 1/3); // 6. Ev
+        houses[6] = descendant;                   // 7. Ev (DSC)
+        houses[7] = interpolateHouse(descendant, mc, 2/3); // 8. Ev
+        houses[8] = interpolateHouse(descendant, mc, 1/3); // 9. Ev
+        houses[9] = mc;                           // 10. Ev (MC)
+        houses[10] = interpolateHouse(mc, ascendant, 2/3); // 11. Ev
+        houses[11] = interpolateHouse(mc, ascendant, 1/3); // 12. Ev
+        
+        console.log('House Cusps:', {
+            'ASC (1)': ascendant.toFixed(2),
+            'IC (4)': ic.toFixed(2),
+            'DSC (7)': descendant.toFixed(2),
+            'MC (10)': mc.toFixed(2)
+        });
         
         return houses;
     } catch (error) {
         console.error('Ev hesaplama hatası:', error);
-        // Fallback: Eşit ev sistemi
+        // Fallback: Equal house sistemi
         const ascendant = 0;
         return Array.from({ length: 12 }, (_, i) => (ascendant + i * 30) % 360);
     }
+}
+
+// İki nokta arasında interpolasyon (saat yönünün tersine)
+function interpolateHouse(start, end, ratio) {
+    let diff = end - start;
+    
+    // Saat yönünün tersine en kısa yolu bul
+    if (diff < 0) diff += 360;
+    if (diff > 180) diff -= 360;
+    
+    let result = start + (diff * ratio);
+    result = ((result % 360) + 360) % 360;
+    
+    return result;
 }
 
 function calculateLocalSiderealTime(date, longitude) {
@@ -637,16 +666,18 @@ function drawBirthChart() {
     updateLegend();
 }
 
-// Burç sembollerini çiz
+// Burç sembollerini çiz (sabit, Koç 0° = sağda başlar)
 function drawZodiacSigns(baseRadius, outerRadius) {
+    // Burçlar sabit pozisyonda: Koç (♈) 0°'de başlar
     for (let i = 0; i < 12; i++) {
-        const startAngle = (i * 30 - 90) * Math.PI / 180;
-        const endAngle = ((i + 1) * 30 - 90) * Math.PI / 180;
+        const signLon = i * 30; // Her burç 30°
+        const startAngle = (signLon - 90) * Math.PI / 180;
+        const endAngle = ((signLon + 30) - 90) * Math.PI / 180;
         const midAngle = (startAngle + endAngle) / 2;
         
-        // Burç ayırıcı çizgi
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
+        // Burç ayırıcı çizgi (ince gri)
+        ctx.strokeStyle = '#CCC';
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.moveTo(Math.cos(startAngle) * baseRadius * 0.95, Math.sin(startAngle) * baseRadius * 0.95);
         ctx.lineTo(Math.cos(startAngle) * outerRadius, Math.sin(startAngle) * outerRadius);
@@ -657,8 +688,8 @@ function drawZodiacSigns(baseRadius, outerRadius) {
         ctx.save();
         ctx.translate(Math.cos(midAngle) * textRadius, Math.sin(midAngle) * textRadius);
         ctx.rotate(-chartRotation * Math.PI / 180);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#666';
+        ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(zodiacSymbols[i], 0, 0);
@@ -670,35 +701,98 @@ function drawZodiacSigns(baseRadius, outerRadius) {
 function drawHouses(baseRadius, houseRadius) {
     const { houses } = currentChart;
     
+    // Ascendant'ı sol tarafa (180°) yerleştirmek için offset
+    // Ascendant 1. ev cusps, onu 180°'ye (sol/9 o'clock) yerleştiriyoruz
+    const ascendantAngle = houses[0];
+    const rotationOffset = 180 - ascendantAngle; // ASC'yi 180°'ye çevirir
+    
     for (let i = 0; i < 12; i++) {
-        const angle = (houses[i] - 90) * Math.PI / 180;
+        // Ev cusps pozisyonunu rotasyon ile ayarla
+        const houseLon = houses[i];
+        const angle = ((houseLon + rotationOffset) - 90) * Math.PI / 180;
         
-        // Ev çizgisi (daha kalın önemli evler için)
-        const isImportant = (i === 0 || i === 3 || i === 6 || i === 9); // 1, 4, 7, 10. evler
+        // Ev çizgisi (önemli evler kalın)
+        const isAngular = (i === 0 || i === 3 || i === 6 || i === 9); // Angular houses: 1(ASC), 4(IC), 7(DSC), 10(MC)
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = isImportant ? 2 : 1;
+        ctx.lineWidth = isAngular ? 2.5 : 1;
         ctx.beginPath();
         ctx.moveTo(Math.cos(angle) * baseRadius * 0.3, Math.sin(angle) * baseRadius * 0.3);
         ctx.lineTo(Math.cos(angle) * houseRadius, Math.sin(angle) * houseRadius);
         ctx.stroke();
         
-        // Ev numarası ve derecesi
-        const textAngle = angle + (15 * Math.PI / 180);
+        // Bir sonraki ev cusps (evin orta noktası için)
+        const nextHouseLon = houses[(i + 1) % 12];
+        let midLon = (houseLon + nextHouseLon) / 2;
+        
+        // Saat yönünün tersine orta nokta bul
+        if (nextHouseLon < houseLon) midLon += 180;
+        
+        const midAngle = ((midLon + rotationOffset) - 90) * Math.PI / 180;
         const textRadius = houseRadius - 20;
-        const degree = Math.floor(houses[i] % 30);
+        
+        // Ev numarası ve derecesi
+        const degree = Math.floor(houseLon % 30);
+        const sign = Math.floor(houseLon / 30);
         
         ctx.save();
-        ctx.translate(Math.cos(textAngle) * textRadius, Math.sin(textAngle) * textRadius);
+        ctx.translate(Math.cos(midAngle) * textRadius, Math.sin(midAngle) * textRadius);
         ctx.rotate(-chartRotation * Math.PI / 180);
-        ctx.fillStyle = '#333';
-        ctx.font = 'bold 11px Arial';
+        ctx.fillStyle = isAngular ? '#000' : '#333';
+        ctx.font = isAngular ? 'bold 13px Arial' : 'bold 11px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${i + 1}`, 0, -6);
-        ctx.font = '9px Arial';
-        ctx.fillText(`${degree}°`, 0, 6);
+        
+        // Ev numarası
+        ctx.fillText(`${i + 1}`, 0, -7);
+        
+        // Derece bilgisi
+        ctx.font = '8px Arial';
+        ctx.fillStyle = '#666';
+        ctx.fillText(`${zodiacSymbols[sign]} ${degree}°`, 0, 5);
+        
         ctx.restore();
     }
+    
+    // Angular noktaları özel işaretle (opsiyonel)
+    drawAngularPoints(houses, rotationOffset, houseRadius);
+}
+
+// Angular noktaları işaretle (ASC, IC, DSC, MC)
+function drawAngularPoints(houses, rotationOffset, radius) {
+    const angularPoints = [
+        { index: 0, label: 'ASC', color: '#E74C3C' },
+        { index: 3, label: 'IC', color: '#3498DB' },
+        { index: 6, label: 'DSC', color: '#27AE60' },
+        { index: 9, label: 'MC', color: '#F39C12' }
+    ];
+    
+    angularPoints.forEach(point => {
+        const houseLon = houses[point.index];
+        const angle = ((houseLon + rotationOffset) - 90) * Math.PI / 180;
+        const labelRadius = radius + 35;
+        
+        ctx.save();
+        ctx.translate(Math.cos(angle) * labelRadius, Math.sin(angle) * labelRadius);
+        ctx.rotate(-chartRotation * Math.PI / 180);
+        
+        // Arka plan
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = point.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Label
+        ctx.fillStyle = point.color;
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(point.label, 0, 0);
+        
+        ctx.restore();
+    });
 }
 
 // Derece işaretlerini çiz
@@ -737,7 +831,11 @@ function drawDegreeMarks(baseRadius) {
 }
 
 function drawAspects(radius) {
-    const { planets, aspects } = currentChart;
+    const { planets, aspects, houses } = currentChart;
+    
+    // Ascendant rotation offset
+    const ascendantAngle = houses[0];
+    const rotationOffset = 180 - ascendantAngle;
     
     // Aspect çizgileri için stil
     const aspectStyles = {
@@ -752,8 +850,12 @@ function drawAspects(radius) {
         if (aspect.strength !== 'major') return;
         
         const style = aspectStyles[aspect.type] || { color: '#999', width: 1, alpha: 0.4 };
-        const p1Angle = (planets[aspect.planet1].longitude - 90) * Math.PI / 180;
-        const p2Angle = (planets[aspect.planet2].longitude - 90) * Math.PI / 180;
+        
+        const p1Lon = planets[aspect.planet1].longitude;
+        const p2Lon = planets[aspect.planet2].longitude;
+        
+        const p1Angle = ((p1Lon + rotationOffset) - 90) * Math.PI / 180;
+        const p2Angle = ((p2Lon + rotationOffset) - 90) * Math.PI / 180;
         
         ctx.strokeStyle = style.color;
         ctx.lineWidth = style.width;
@@ -777,20 +879,28 @@ function drawAspects(radius) {
 }
 
 function drawPlanets(radius) {
-    const { planets } = currentChart;
+    const { planets, houses } = currentChart;
+    
+    // Ascendant rotation offset
+    const ascendantAngle = houses[0];
+    const rotationOffset = 180 - ascendantAngle;
     
     Object.entries(planets).forEach(([name, data]) => {
-        const angle = (data.longitude - 90) * Math.PI / 180;
+        // Gezegen longitude'u harita rotasyonu ile ayarla
+        const planetLon = data.longitude;
+        const angle = ((planetLon + rotationOffset) - 90) * Math.PI / 180;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
         
         // Gezegen pozisyon çizgisi
-        ctx.strokeStyle = '#CCC';
+        ctx.strokeStyle = '#DDD';
         ctx.lineWidth = 0.5;
+        ctx.setLineDash([2, 2]);
         ctx.beginPath();
         ctx.moveTo(Math.cos(angle) * (radius - 25), Math.sin(angle) * (radius - 25));
         ctx.lineTo(Math.cos(angle) * (radius + 5), Math.sin(angle) * (radius + 5));
         ctx.stroke();
+        ctx.setLineDash([]);
         
         // Gezegen sembolü
         ctx.save();
@@ -800,25 +910,27 @@ function drawPlanets(radius) {
         // Arka plan
         ctx.fillStyle = 'white';
         ctx.beginPath();
-        ctx.arc(0, 0, 13, 0, Math.PI * 2);
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = data.color;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
         
         // Sembol
         ctx.fillStyle = data.color;
-        ctx.font = 'bold 15px Arial';
+        ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(data.symbol, 0, 0);
         
-        // Derece bilgisi
-        const degree = Math.floor(data.longitude % 30);
-        const minutes = Math.floor((data.longitude % 1) * 60);
+        // Derece bilgisi (burç içi derece)
+        const degree = Math.floor(planetLon % 30);
+        const minutes = Math.floor((planetLon % 1) * 60);
+        const sign = Math.floor(planetLon / 30);
+        
         ctx.font = '7px Arial';
         ctx.fillStyle = '#333';
-        ctx.fillText(`${degree}°${String(minutes).padStart(2, '0')}'`, 0, 20);
+        ctx.fillText(`${zodiacSymbols[sign]}${degree}°${String(minutes).padStart(2, '0')}'`, 0, 19);
         
         ctx.restore();
     });
