@@ -169,27 +169,60 @@ async function calculateBirthChart() {
                 // Gezegen pozisyonlarını hesapla
                 planets = await calculatePlanetsWithSwissEph(utcDate);
                 
+                if (!planets) {
+                    throw new Error('Swiss Ephemeris gezegen hesaplaması başarısız');
+                }
+                
                 // Yükselen ve evleri hesapla  
                 const housesData = await calculateHousesWithSwissEph(utcDate, cityData.lat, cityData.lon);
+                
+                if (!housesData || !housesData.cusps) {
+                    throw new Error('Swiss Ephemeris ev hesaplaması başarısız');
+                }
+                
                 houses = housesData.cusps;
                 
                 // Aspectleri hesapla
                 aspects = calculateAspects(planets);
                 
                 console.log('✅ Swiss Ephemeris hesaplama tamamlandı!');
+                console.log('Planets:', Object.keys(planets).length, 'gezegen');
+                console.log('Houses:', houses.length, 'ev');
+                console.log('Aspects:', aspects.length, 'aspect');
+                
             } catch (error) {
                 console.warn('⚠️ Swiss Ephemeris hatası, fallback kullanılıyor:', error);
                 planets = null;
+                houses = null;
             }
         }
         
         // Fallback: Swiss Ephemeris başarısız ise basit hesaplama
-        if (!planets) {
+        if (!planets || !houses) {
             console.log('📊 Fallback hesaplama kullanılıyor...');
-            planets = calculatePlanetPositions(utcDate);
-            houses = calculateHouses(utcDate, cityData.lat, cityData.lon);
-            aspects = calculateAspects(planets);
-            console.log('✅ Fallback hesaplama tamamlandı!');
+            
+            try {
+                planets = calculatePlanetPositions(utcDate);
+                if (!planets || Object.keys(planets).length === 0) {
+                    throw new Error('Gezegen pozisyonları hesaplanamadı');
+                }
+                
+                houses = calculateHouses(utcDate, cityData.lat, cityData.lon);
+                if (!houses || houses.length !== 12) {
+                    throw new Error('Evler hesaplanamadı');
+                }
+                
+                aspects = calculateAspects(planets);
+                
+                console.log('✅ Fallback hesaplama tamamlandı!');
+                console.log('Planets:', Object.keys(planets).length, 'gezegen');
+                console.log('Houses:', houses.length, 'ev');
+                console.log('Aspects:', aspects.length, 'aspect');
+                
+            } catch (fallbackError) {
+                console.error('❌ Fallback hesaplama da başarısız:', fallbackError);
+                throw new Error('Hesaplama yapılamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
+            }
         }
         
         currentChart = {
@@ -217,64 +250,65 @@ async function calculateBirthChart() {
     }
 }
 
-// Gezegen pozisyonlarını hesapla
+// Gezegen pozisyonlarını hesapla (Garantili matematiksel formüller)
 function calculatePlanetPositions(date) {
     const planets = {};
     
-    try {
-        // Astronomy Engine ile doğru API kullanımı
-        const bodies = {
-            Sun: 'Güneş',
-            Moon: 'Ay',
-            Mercury: 'Merkür',
-            Venus: 'Venüs',
-            Mars: 'Mars',
-            Jupiter: 'Jüpiter',
-            Saturn: 'Satürn',
-            Uranus: 'Uranüs',
-            Neptune: 'Neptün',
-            Pluto: 'Plüton'
-        };
-        
-        Object.keys(bodies).forEach(bodyName => {
-            try {
-                // Astronomy Engine doğru kullanımı
-                const body = Astronomy.Body[bodyName];
-                
-                // Geocentric pozisyon al
-                const geoVector = Astronomy.GeoVector(body, date, false);
-                
-                // Ekliptik koordinatlara çevir
-                const ecliptic = Astronomy.Ecliptic(geoVector);
-                
-                // Longitude hesapla (0-360 derece)
-                let lon = ecliptic.elon;
-                if (lon < 0) lon += 360;
-                
-                planets[bodyName] = {
-                    longitude: lon,
-                    latitude: ecliptic.elat,
-                    symbol: planetSymbols[bodyName],
-                    name: bodies[bodyName],
-                    color: planetColors[bodyName]
-                };
-            } catch (e) {
-                console.warn(`${bodyName} hesaplanamadı:`, e);
-                // Fallback basit hesaplama
-                planets[bodyName] = {
-                    longitude: approximatePlanetPosition(bodyName, date),
-                    latitude: 0,
-                    symbol: planetSymbols[bodyName],
-                    name: bodies[bodyName],
-                    color: planetColors[bodyName]
-                };
+    const bodies = {
+        Sun: 'Güneş',
+        Moon: 'Ay',
+        Mercury: 'Merkür',
+        Venus: 'Venüs',
+        Mars: 'Mars',
+        Jupiter: 'Jüpiter',
+        Saturn: 'Satürn',
+        Uranus: 'Uranüs',
+        Neptune: 'Neptün',
+        Pluto: 'Plüton'
+    };
+    
+    // Astronomy Engine varsa ve çalışıyorsa onu kullan
+    const hasAstronomy = typeof Astronomy !== 'undefined' && Astronomy.Body;
+    
+    Object.keys(bodies).forEach(bodyName => {
+        try {
+            let lon, lat = 0;
+            
+            if (hasAstronomy) {
+                try {
+                    const body = Astronomy.Body[bodyName];
+                    const geoVector = Astronomy.GeoVector(body, date, false);
+                    const ecliptic = Astronomy.Ecliptic(geoVector);
+                    lon = ecliptic.elon;
+                    if (lon < 0) lon += 360;
+                    lat = ecliptic.elat;
+                } catch (e) {
+                    console.warn(`${bodyName} Astronomy Engine ile hesaplanamadı, basit formül kullanılıyor`);
+                    lon = approximatePlanetPosition(bodyName, date);
+                }
+            } else {
+                lon = approximatePlanetPosition(bodyName, date);
             }
-        });
-        
-    } catch (error) {
-        console.error('Gezegen hesaplama hatası:', error);
-        throw error;
-    }
+            
+            planets[bodyName] = {
+                longitude: lon,
+                latitude: lat,
+                symbol: planetSymbols[bodyName],
+                name: bodies[bodyName],
+                color: planetColors[bodyName]
+            };
+        } catch (e) {
+            console.error(`${bodyName} hesaplama hatası:`, e);
+            // En son fallback
+            planets[bodyName] = {
+                longitude: 0,
+                latitude: 0,
+                symbol: planetSymbols[bodyName],
+                name: bodies[bodyName],
+                color: planetColors[bodyName]
+            };
+        }
+    });
     
     return planets;
 }
@@ -530,6 +564,12 @@ function calculateAspects(planets) {
 
 // Sonuçları göster
 function displayResults() {
+    if (!currentChart || !currentChart.planets || !currentChart.houses) {
+        console.error('Grafik verisi eksik!');
+        alert('❌ Hesaplama tamamlanamadı. Lütfen tekrar deneyin.');
+        return;
+    }
+    
     document.getElementById('birth-form').style.display = 'none';
     document.getElementById('results-panel').style.display = 'block';
     document.getElementById('controls').style.display = 'grid';
@@ -617,7 +657,15 @@ function initializeCanvas() {
 
 // Doğum haritasını çiz
 function drawBirthChart() {
-    if (!currentChart || !ctx) return;
+    if (!currentChart || !ctx) {
+        console.error('Chart data or context missing');
+        return;
+    }
+    
+    if (!currentChart.houses || !currentChart.planets) {
+        console.error('Houses or planets data missing');
+        return;
+    }
     
     const w = canvas.width;
     const h = canvas.height;
