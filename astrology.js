@@ -954,8 +954,8 @@ function resetForm() {
     document.getElementById('chart-wrapper').style.display = 'none';
     document.getElementById('controls').style.display = 'none';
     currentChart = null;
-    chartRotation = 0;
     chartScale = 1;
+    canvasVisible = false;
 }
 
 // Giriş animasyonu
