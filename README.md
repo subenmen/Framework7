@@ -1,6 +1,11 @@
-# KUBEY Logo Animasyonu
+# KUBEY - Animasyon Projeleri
 
-Modern ve profesyonel bir logo animasyonu projesi. KUBEY yazılım firması için Anime.js kütüphanesi kullanılarak geliştirilmiştir.
+Modern ve profesyonel animasyon projeleri koleksiyonu. KUBEY yazılım firması için Anime.js kütüphanesi kullanılarak geliştirilmiştir.
+
+## 📂 Projeler
+
+1. **Logo Animasyonu** (`index.html`)
+2. **İnteraktif Astroloji Haritası** (`astrology.html`)
 
 ## 🚀 Özellikler
 
@@ -61,4 +66,44 @@ Bu proje KUBEY yazılım firması için geliştirilmiştir.
 
 ---
 
-**Geliştirici Notu**: Tüm animasyonlar optimize edilmiş ve performans odaklıdır. 60 FPS akıcılığı hedeflenmiştir.
+## 🌌 İnteraktif Astroloji Haritası
+
+### Özellikler
+
+- **12 Burç Sembolü**: Dairesel dizilimde yerleştirilmiş
+- **6 Gezegen**: Sürüklenebilir gezegen sembolleri
+- **Hareket Ettirilebilir**: Tüm gezegenler ve merkez güneş sürüklenebilir
+- **Döndürülebilir Burç Çemberi**: Burç halkası döndürülebilir
+- **200+ Yıldız**: Parıldayan yıldız animasyonları
+- **Bilgi Paneli**: Burç ve gezegen bilgileri
+- **Canvas Çemberleri**: Yörünge çizgileri ve radyal hatlar
+
+### İnteraktif Kontroller
+
+- ↶/↷ **Döndürme Butonları**: Burç çemberini 30° döndür
+- 🔄 **Sıfırla**: Tüm elementleri başlangıç pozisyonuna döndür
+- ⏯️ **Animasyon**: Sürekli animasyonları aç/kapat
+- **Sürükle & Bırak**: Gezegenleri istediğiniz yere taşıyın
+- **Tıklama**: Burç ve gezegen bilgilerini görüntüle
+
+### Klavye Kısayolları
+
+- `←/→` - Burç çemberini döndür
+- `R` - Sıfırla
+- `Space` - Animasyonları duraklat/başlat
+
+### Gezegen ve Burç Bilgileri
+
+Harita üzerinde:
+- **Merkür** ☿ - İletişim, zeka
+- **Venüs** ♀ - Aşk, güzellik
+- **Mars** ♂ - Enerji, cesaret
+- **Jüpiter** ♃ - Şans, genişleme
+- **Satürn** ♄ - Disiplin, sorumluluk
+- **Ay** ☽ - Duygular, içgüdüler
+
+12 burç sembolü ve detaylı bilgileri içerir.
+
+---
+
+**Geliştirici Notu**: Tüm animasyonlar optimize edilmiş ve performans odaklıdır. 60 FPS akıcılığı hedeflenmiştir. Touch ve mouse olayları desteklenir.

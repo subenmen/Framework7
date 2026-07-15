@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUBEY - İnteraktif Astroloji Haritası</title>
+    <link rel="stylesheet" href="astrology.css">
+</head>
+<body>
+    <div class="astro-container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">🌌 İnteraktif Astroloji Haritası</h1>
+            <p class="subtitle">Burçları ve gezegenleri sürükleyip yerleştirin</p>
+        </div>
+
+        <!-- Ana Astroloji Haritası -->
+        <div class="chart-wrapper">
+            <canvas id="astro-canvas"></canvas>
+            
+            <!-- Merkez Güneş -->
+            <div id="center-sun" class="center-element draggable">
+                <div class="sun-core">☀️</div>
+                <div class="sun-rays"></div>
+            </div>
+
+            <!-- 12 Burç -->
+            <div class="zodiac-wheel" id="zodiac-wheel">
+                <!-- Burç sembolleri -->
+                <div class="zodiac-sign" data-sign="aries" style="--index: 0">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♈</span>
+                        <span class="sign-name">Koç</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="taurus" style="--index: 1">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♉</span>
+                        <span class="sign-name">Boğa</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="gemini" style="--index: 2">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♊</span>
+                        <span class="sign-name">İkizler</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="cancer" style="--index: 3">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♋</span>
+                        <span class="sign-name">Yengeç</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="leo" style="--index: 4">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♌</span>
+                        <span class="sign-name">Aslan</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="virgo" style="--index: 5">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♍</span>
+                        <span class="sign-name">Başak</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="libra" style="--index: 6">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♎</span>
+                        <span class="sign-name">Terazi</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="scorpio" style="--index: 7">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♏</span>
+                        <span class="sign-name">Akrep</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="sagittarius" style="--index: 8">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♐</span>
+                        <span class="sign-name">Yay</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="capricorn" style="--index: 9">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♑</span>
+                        <span class="sign-name">Oğlak</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="aquarius" style="--index: 10">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♒</span>
+                        <span class="sign-name">Kova</span>
+                    </div>
+                </div>
+                <div class="zodiac-sign" data-sign="pisces" style="--index: 11">
+                    <div class="sign-content draggable">
+                        <span class="sign-symbol">♓</span>
+                        <span class="sign-name">Balık</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gezegenler -->
+            <div class="planets-container">
+                <div class="planet draggable" id="mercury" data-planet="mercury">
+                    <span class="planet-symbol">☿</span>
+                    <span class="planet-name">Merkür</span>
+                </div>
+                <div class="planet draggable" id="venus" data-planet="venus">
+                    <span class="planet-symbol">♀</span>
+                    <span class="planet-name">Venüs</span>
+                </div>
+                <div class="planet draggable" id="mars" data-planet="mars">
+                    <span class="planet-symbol">♂</span>
+                    <span class="planet-name">Mars</span>
+                </div>
+                <div class="planet draggable" id="jupiter" data-planet="jupiter">
+                    <span class="planet-symbol">♃</span>
+                    <span class="planet-name">Jüpiter</span>
+                </div>
+                <div class="planet draggable" id="saturn" data-planet="saturn">
+                    <span class="planet-symbol">♄</span>
+                    <span class="planet-name">Satürn</span>
+                </div>
+                <div class="planet draggable" id="moon" data-planet="moon">
+                    <span class="planet-symbol">☽</span>
+                    <span class="planet-name">Ay</span>
+                </div>
+            </div>
+
+            <!-- Yıldızlar -->
+            <div class="stars-container" id="stars-container"></div>
+        </div>
+
+        <!-- Kontrol Paneli -->
+        <div class="controls">
+            <button id="rotate-left" class="control-btn">↶ Sola Döndür</button>
+            <button id="rotate-right" class="control-btn">↷ Sağa Döndür</button>
+            <button id="reset-chart" class="control-btn">🔄 Sıfırla</button>
+            <button id="toggle-animation" class="control-btn">⏯️ Animasyon</button>
+        </div>
+
+        <!-- Bilgi Paneli -->
+        <div class="info-panel" id="info-panel">
+            <h3>🔮 Seçilen Element</h3>
+            <div id="info-content">
+                <p>Bir burç veya gezegen üzerine tıklayın</p>
+            </div>
+        </div>
+
+        <!-- Geri Dön Butonu -->
+        <a href="index.html" class="back-btn">← Ana Sayfa</a>
+    </div>
+
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="astrology.js"></script>
+</body>
+</html>
