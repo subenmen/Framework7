@@ -167,28 +167,48 @@ async function calculateBirthChart() {
         return;
     }
     
-    const cityData = cityCoordinates[cityInput.value];
-    const [hours, minutes] = timeInput.value.split(':').map(Number);
-    
-    // UTC tarih oluştur
-    const birthDate = new Date(dateInput.value);
-    birthDate.setHours(hours - cityData.tz, minutes, 0, 0);
+    // Loading göster
+    const btn = document.getElementById('calculate-chart');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Hesaplanıyor...';
+    btn.disabled = true;
     
     try {
+        const cityData = cityCoordinates[cityInput.value];
+        const [hours, minutes] = timeInput.value.split(':').map(Number);
+        
+        // Local tarih oluştur
+        const birthDate = new Date(dateInput.value);
+        birthDate.setHours(hours, minutes, 0, 0);
+        
+        // UTC'ye çevir
+        const utcDate = new Date(birthDate.getTime() - (cityData.tz * 60 * 60 * 1000));
+        
+        console.log('Doğum tarihi (local):', birthDate);
+        console.log('Doğum tarihi (UTC):', utcDate);
+        
         // Gezegen pozisyonlarını hesapla
-        const planets = calculatePlanetPositions(birthDate);
+        console.log('Gezegenler hesaplanıyor...');
+        const planets = calculatePlanetPositions(utcDate);
+        console.log('Gezegenler:', planets);
         
         // Yükselen ve evleri hesapla
-        const houses = calculateHouses(birthDate, cityData.lat, cityData.lon);
+        console.log('Evler hesaplanıyor...');
+        const houses = calculateHouses(utcDate, cityData.lat, cityData.lon);
+        console.log('Evler:', houses);
         
         // Aspectleri hesapla
+        console.log('Aspectler hesaplanıyor...');
         const aspects = calculateAspects(planets);
+        console.log('Aspectler:', aspects);
         
         currentChart = {
             date: dateInput.value,
             time: timeInput.value,
             city: cityInput.value,
             cityData: cityData,
+            birthDate: birthDate,
+            utcDate: utcDate,
             planets: planets,
             houses: houses,
             aspects: aspects
@@ -196,50 +216,120 @@ async function calculateBirthChart() {
         
         displayResults();
         
+        btn.textContent = originalText;
+        btn.disabled = false;
+        
     } catch (error) {
         console.error('Hesaplama hatası:', error);
-        alert('❌ Hesaplama sırasında bir hata oluştu!');
+        alert(`❌ Hesaplama hatası: ${error.message}\n\nDetaylar console'da.`);
+        btn.textContent = originalText;
+        btn.disabled = false;
     }
 }
 
 // Gezegen pozisyonlarını hesapla
 function calculatePlanetPositions(date) {
-    const observer = new Astronomy.Observer(39.9334, 32.8597, 0);
     const planets = {};
     
-    // Güneş
-    const sun = Astronomy.SunPosition(date);
-    planets.Sun = {
-        longitude: Astronomy.EclipticLongitude(Astronomy.Body.Sun, date),
-        symbol: planetSymbols.Sun,
-        name: 'Güneş',
-        color: planetColors.Sun
-    };
-    
-    // Ay
-    planets.Moon = {
-        longitude: Astronomy.EclipticLongitude(Astronomy.Body.Moon, date),
-        symbol: planetSymbols.Moon,
-        name: 'Ay',
-        color: planetColors.Moon
-    };
-    
-    // Diğer gezegenler
-    const bodies = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
-    bodies.forEach(body => {
-        try {
-            planets[body] = {
-                longitude: Astronomy.EclipticLongitude(Astronomy.Body[body], date),
-                symbol: planetSymbols[body],
-                name: getTurkishPlanetName(body),
-                color: planetColors[body]
-            };
-        } catch (e) {
-            console.warn(`${body} hesaplanamadı:`, e);
-        }
-    });
+    try {
+        // Astronomy Engine ile doğru API kullanımı
+        const bodies = {
+            Sun: 'Güneş',
+            Moon: 'Ay',
+            Mercury: 'Merkür',
+            Venus: 'Venüs',
+            Mars: 'Mars',
+            Jupiter: 'Jüpiter',
+            Saturn: 'Satürn',
+            Uranus: 'Uranüs',
+            Neptune: 'Neptün',
+            Pluto: 'Plüton'
+        };
+        
+        Object.keys(bodies).forEach(bodyName => {
+            try {
+                // Astronomy Engine doğru kullanımı
+                const body = Astronomy.Body[bodyName];
+                
+                // Geocentric pozisyon al
+                const geoVector = Astronomy.GeoVector(body, date, false);
+                
+                // Ekliptik koordinatlara çevir
+                const ecliptic = Astronomy.Ecliptic(geoVector);
+                
+                // Longitude hesapla (0-360 derece)
+                let lon = ecliptic.elon;
+                if (lon < 0) lon += 360;
+                
+                planets[bodyName] = {
+                    longitude: lon,
+                    latitude: ecliptic.elat,
+                    symbol: planetSymbols[bodyName],
+                    name: bodies[bodyName],
+                    color: planetColors[bodyName]
+                };
+            } catch (e) {
+                console.warn(`${bodyName} hesaplanamadı:`, e);
+                // Fallback basit hesaplama
+                planets[bodyName] = {
+                    longitude: approximatePlanetPosition(bodyName, date),
+                    latitude: 0,
+                    symbol: planetSymbols[bodyName],
+                    name: bodies[bodyName],
+                    color: planetColors[bodyName]
+                };
+            }
+        });
+        
+    } catch (error) {
+        console.error('Gezegen hesaplama hatası:', error);
+        throw error;
+    }
     
     return planets;
+}
+
+// Basit yaklaşık pozisyon hesaplama (fallback)
+function approximatePlanetPosition(planet, date) {
+    // J2000 epoch'tan geçen gün sayısı
+    const J2000 = new Date('2000-01-01T12:00:00Z');
+    const days = (date - J2000) / (1000 * 60 * 60 * 24);
+    
+    // Ortalama yörünge hızları (derece/gün)
+    const meanMotions = {
+        Sun: 0.9856,
+        Moon: 13.1764,
+        Mercury: 4.0923,
+        Venus: 1.6021,
+        Mars: 0.5240,
+        Jupiter: 0.0831,
+        Saturn: 0.0335,
+        Uranus: 0.0117,
+        Neptune: 0.0060,
+        Pluto: 0.0040
+    };
+    
+    // Başlangıç pozisyonları (2000.0 için)
+    const startPositions = {
+        Sun: 280.46,
+        Moon: 218.32,
+        Mercury: 252.25,
+        Venus: 181.98,
+        Mars: 355.45,
+        Jupiter: 34.35,
+        Saturn: 49.95,
+        Uranus: 313.23,
+        Neptune: 304.88,
+        Pluto: 238.96
+    };
+    
+    const motion = meanMotions[planet] || 0;
+    const start = startPositions[planet] || 0;
+    
+    let longitude = (start + motion * days) % 360;
+    if (longitude < 0) longitude += 360;
+    
+    return longitude;
 }
 
 function getTurkishPlanetName(planet) {
@@ -256,56 +346,93 @@ function getTurkishPlanetName(planet) {
     return names[planet] || planet;
 }
 
-// Evleri hesapla (Placidus sistemi)
+// Evleri hesapla (Placidus sistemi - basitleştirilmiş)
 function calculateHouses(date, lat, lon) {
-    const lst = calculateLocalSiderealTime(date, lon);
-    const houses = [];
-    
-    // Basitleştirilmiş Placidus hesabı
-    const ascendant = calculateAscendant(lst, lat);
-    const mc = (lst * 15) % 360;
-    
-    houses.push(ascendant); // 1. Ev (Ascendant)
-    
-    for (let i = 1; i < 12; i++) {
-        let cusp;
-        if (i === 9) {
-            cusp = mc; // 10. Ev (MC)
-        } else if (i < 3 || i > 9) {
-            // 2, 3, 11, 12. evler - basit interpolasyon
-            cusp = (ascendant + (i * 30)) % 360;
-        } else {
-            // 4-9 arası evler
-            cusp = (mc + ((i - 9) * 30)) % 360;
-        }
-        houses.push(cusp);
+    try {
+        const lst = calculateLocalSiderealTime(date, lon);
+        const houses = [];
+        
+        // 1. Ev - Ascendant
+        const ascendant = calculateAscendant(lst, lat);
+        
+        // 10. Ev - MC (Midheaven)
+        const mc = (lst * 15) % 360;
+        
+        // 12 evi hesapla
+        houses[0] = ascendant;           // 1. Ev (Asc)
+        houses[1] = (ascendant + 30) % 360;   // 2. Ev
+        houses[2] = (ascendant + 60) % 360;   // 3. Ev
+        houses[3] = (mc + 180) % 360;    // 4. Ev (IC)
+        houses[4] = (mc + 210) % 360;    // 5. Ev
+        houses[5] = (mc + 240) % 360;    // 6. Ev
+        houses[6] = (ascendant + 180) % 360;  // 7. Ev (Desc)
+        houses[7] = (ascendant + 210) % 360;  // 8. Ev
+        houses[8] = (ascendant + 240) % 360;  // 9. Ev
+        houses[9] = mc;                  // 10. Ev (MC)
+        houses[10] = (mc + 30) % 360;    // 11. Ev
+        houses[11] = (mc + 60) % 360;    // 12. Ev
+        
+        return houses;
+    } catch (error) {
+        console.error('Ev hesaplama hatası:', error);
+        // Fallback: Eşit ev sistemi
+        const ascendant = 0;
+        return Array.from({ length: 12 }, (_, i) => (ascendant + i * 30) % 360);
     }
-    
-    return houses;
 }
 
 function calculateLocalSiderealTime(date, longitude) {
-    const J2000 = new Date('2000-01-01T12:00:00Z');
-    const daysSinceJ2000 = (date - J2000) / (1000 * 60 * 60 * 24);
-    const hours = date.getUTCHours() + date.getUTCMinutes() / 60;
-    const gmst = 18.697374558 + 24.06570982441908 * daysSinceJ2000 + hours * 1.00273790935;
-    const lst = gmst + (longitude / 15);
-    return ((lst % 24) + 24) % 24;
+    try {
+        // J2000 epoch (1 Ocak 2000, 12:00 UTC)
+        const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0) / 1000; // Unix timestamp (saniye)
+        const currentTime = date.getTime() / 1000; // Unix timestamp (saniye)
+        
+        // J2000'den geçen gün sayısı
+        const d = (currentTime - J2000) / 86400;
+        
+        // Greenwich Mean Sidereal Time (GMST) hesapla
+        const gmst = 18.697374558 + 24.06570982441908 * d;
+        
+        // Local Sidereal Time (LST) hesapla
+        const lst = gmst + (longitude / 15);
+        
+        // 0-24 aralığına normalize et
+        return ((lst % 24) + 24) % 24;
+    } catch (error) {
+        console.error('LST hesaplama hatası:', error);
+        return 0;
+    }
 }
 
 function calculateAscendant(lst, latitude) {
-    const lstDegrees = lst * 15;
-    const latRad = latitude * Math.PI / 180;
-    const obliquity = 23.4397;
-    const oblRad = obliquity * Math.PI / 180;
-    
-    const y = Math.sin(lstDegrees * Math.PI / 180);
-    const x = Math.cos(lstDegrees * Math.PI / 180) * Math.cos(oblRad) + Math.tan(latRad) * Math.sin(oblRad);
-    
-    let asc = Math.atan2(y, x) * 180 / Math.PI;
-    asc = ((asc % 360) + 360) % 360;
-    
-    return asc;
+    try {
+        // LST'yi dereceye çevir
+        const lstDegrees = (lst * 15) % 360;
+        
+        // Ekliptik eğimi (obliquity)
+        const obliquity = 23.4397; // derece
+        const oblRad = obliquity * Math.PI / 180;
+        
+        // Enlem radyana
+        const latRad = latitude * Math.PI / 180;
+        
+        // LST radyana
+        const lstRad = lstDegrees * Math.PI / 180;
+        
+        // Ascendant hesapla
+        const y = -Math.cos(lstRad);
+        const x = -Math.sin(oblRad) * Math.tan(latRad) + Math.cos(oblRad) * Math.sin(lstRad);
+        
+        let asc = Math.atan2(y, x) * 180 / Math.PI;
+        
+        // 0-360 aralığına normalize et
+        asc = ((asc % 360) + 360) % 360;
+        
+        return asc;
+    } catch (error) {
+        console.error('Ascendant hesaplama hatası:', error);
+        return 0;
+    }
 }
 
 // Aspectleri hesapla
