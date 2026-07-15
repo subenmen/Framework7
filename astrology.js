@@ -442,66 +442,67 @@ function drawBirthChart() {
     const h = canvas.height;
     const centerX = w / 2;
     const centerY = h / 2;
-    const baseRadius = Math.min(w, h) * 0.4 * chartScale;
+    const baseRadius = Math.min(w, h) * 0.42 * chartScale;
     
     ctx.clearRect(0, 0, w, h);
+    
+    // Arka plan
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, w, h);
+    
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(chartRotation * Math.PI / 180);
     
-    // Arka plan
-    ctx.fillStyle = '#FAFAFA';
-    ctx.beginPath();
-    ctx.arc(0, 0, baseRadius * 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    const { houses } = currentChart;
     
-    // Dış çember
+    // 1. En dış çember (burçlar için)
+    const outerRadius = baseRadius * 1.05;
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
+    ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
     ctx.stroke();
     
-    // İç çemberler
+    // 2. Evler çemberi
+    const houseRadius = baseRadius * 0.95;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, houseRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // 3. İç çemberler
     ctx.lineWidth = 1;
-    [0.3, 0.6, 0.85].forEach(ratio => {
+    [0.75, 0.55, 0.35].forEach(ratio => {
+        ctx.strokeStyle = '#666';
         ctx.beginPath();
         ctx.arc(0, 0, baseRadius * ratio, 0, Math.PI * 2);
         ctx.stroke();
     });
     
-    // 12 burç bölümü
-    const { houses } = currentChart;
-    for (let i = 0; i < 12; i++) {
-        const angle = (houses[i] - 90) * Math.PI / 180;
-        
-        // Ev çizgileri
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(angle) * baseRadius, Math.sin(angle) * baseRadius);
-        ctx.stroke();
-        
-        // Burç sembolleri
-        const midAngle = angle + (15 * Math.PI / 180);
-        const textRadius = baseRadius * 0.93;
-        const sign = Math.floor(houses[i] / 30);
-        
-        ctx.save();
-        ctx.translate(Math.cos(midAngle) * textRadius, Math.sin(midAngle) * textRadius);
-        ctx.rotate(-chartRotation * Math.PI / 180);
-        ctx.fillStyle = zodiacColors[sign];
-        ctx.font = 'bold 18px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(zodiacSymbols[sign], 0, 0);
-        ctx.restore();
-    }
+    // Merkez daire
+    ctx.fillStyle = '#F5F5F5';
+    ctx.beginPath();
+    ctx.arc(0, 0, baseRadius * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     
-    // Aspectler (önce çiz ki üstte kalmasın)
-    drawAspects(baseRadius * 0.25);
+    // 12 burç bölümü çiz
+    drawZodiacSigns(baseRadius, outerRadius);
+    
+    // Ev çizgileri ve numaraları
+    drawHouses(baseRadius, houseRadius);
+    
+    // Derece işaretleri
+    drawDegreeMarks(baseRadius);
+    
+    // Aspectler (merkez bölgede)
+    drawAspects(baseRadius * 0.28);
     
     // Gezegenleri çiz
-    drawPlanets(baseRadius * 0.7);
+    drawPlanets(baseRadius * 0.88);
     
     ctx.restore();
     
@@ -509,23 +510,142 @@ function drawBirthChart() {
     updateLegend();
 }
 
+// Burç sembollerini çiz
+function drawZodiacSigns(baseRadius, outerRadius) {
+    for (let i = 0; i < 12; i++) {
+        const startAngle = (i * 30 - 90) * Math.PI / 180;
+        const endAngle = ((i + 1) * 30 - 90) * Math.PI / 180;
+        const midAngle = (startAngle + endAngle) / 2;
+        
+        // Burç ayırıcı çizgi
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(startAngle) * baseRadius * 0.95, Math.sin(startAngle) * baseRadius * 0.95);
+        ctx.lineTo(Math.cos(startAngle) * outerRadius, Math.sin(startAngle) * outerRadius);
+        ctx.stroke();
+        
+        // Burç sembolü
+        const textRadius = (baseRadius * 0.95 + outerRadius) / 2;
+        ctx.save();
+        ctx.translate(Math.cos(midAngle) * textRadius, Math.sin(midAngle) * textRadius);
+        ctx.rotate(-chartRotation * Math.PI / 180);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(zodiacSymbols[i], 0, 0);
+        ctx.restore();
+    }
+}
+
+// Evleri çiz
+function drawHouses(baseRadius, houseRadius) {
+    const { houses } = currentChart;
+    
+    for (let i = 0; i < 12; i++) {
+        const angle = (houses[i] - 90) * Math.PI / 180;
+        
+        // Ev çizgisi (daha kalın önemli evler için)
+        const isImportant = (i === 0 || i === 3 || i === 6 || i === 9); // 1, 4, 7, 10. evler
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = isImportant ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * baseRadius * 0.3, Math.sin(angle) * baseRadius * 0.3);
+        ctx.lineTo(Math.cos(angle) * houseRadius, Math.sin(angle) * houseRadius);
+        ctx.stroke();
+        
+        // Ev numarası ve derecesi
+        const textAngle = angle + (15 * Math.PI / 180);
+        const textRadius = houseRadius - 20;
+        const degree = Math.floor(houses[i] % 30);
+        
+        ctx.save();
+        ctx.translate(Math.cos(textAngle) * textRadius, Math.sin(textAngle) * textRadius);
+        ctx.rotate(-chartRotation * Math.PI / 180);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${i + 1}`, 0, -6);
+        ctx.font = '9px Arial';
+        ctx.fillText(`${degree}°`, 0, 6);
+        ctx.restore();
+    }
+}
+
+// Derece işaretlerini çiz
+function drawDegreeMarks(baseRadius) {
+    ctx.strokeStyle = '#999';
+    ctx.fillStyle = '#666';
+    ctx.font = '8px Arial';
+    
+    for (let deg = 0; deg < 360; deg += 5) {
+        const angle = (deg - 90) * Math.PI / 180;
+        const isMajor = deg % 10 === 0;
+        
+        const startRadius = baseRadius * 0.75;
+        const endRadius = baseRadius * (isMajor ? 0.72 : 0.735);
+        
+        ctx.lineWidth = isMajor ? 1 : 0.5;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * startRadius, Math.sin(angle) * startRadius);
+        ctx.lineTo(Math.cos(angle) * endRadius, Math.sin(angle) * endRadius);
+        ctx.stroke();
+        
+        // Her 10 derecede numara
+        if (deg % 30 === 0 && deg % 30 === 0) {
+            const textRadius = baseRadius * 0.68;
+            const displayDeg = deg % 30;
+            
+            ctx.save();
+            ctx.translate(Math.cos(angle) * textRadius, Math.sin(angle) * textRadius);
+            ctx.rotate(-chartRotation * Math.PI / 180);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${displayDeg}°`, 0, 0);
+            ctx.restore();
+        }
+    }
+}
+
 function drawAspects(radius) {
     const { planets, aspects } = currentChart;
     
+    // Aspect çizgileri için stil
+    const aspectStyles = {
+        'Conjunction': { color: '#FFD700', width: 2.5, alpha: 0.7 },
+        'Opposition': { color: '#E74C3C', width: 1.5, alpha: 0.6 },
+        'Trine': { color: '#3498DB', width: 1.5, alpha: 0.6 },
+        'Square': { color: '#E74C3C', width: 1.5, alpha: 0.6 },
+        'Sextile': { color: '#27AE60', width: 1, alpha: 0.5 }
+    };
+    
     aspects.forEach(aspect => {
-        if (aspect.strength !== 'major') return; // Sadece major aspectler
+        if (aspect.strength !== 'major') return;
         
+        const style = aspectStyles[aspect.type] || { color: '#999', width: 1, alpha: 0.4 };
         const p1Angle = (planets[aspect.planet1].longitude - 90) * Math.PI / 180;
         const p2Angle = (planets[aspect.planet2].longitude - 90) * Math.PI / 180;
         
-        ctx.strokeStyle = aspect.color;
-        ctx.lineWidth = aspect.type === 'Conjunction' ? 2 : 1;
-        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = style.color;
+        ctx.lineWidth = style.width;
+        ctx.globalAlpha = style.alpha;
+        
+        // Çizgi stili
+        if (aspect.type === 'Square' || aspect.type === 'Opposition') {
+            ctx.setLineDash([4, 2]);
+        } else {
+            ctx.setLineDash([]);
+        }
+        
         ctx.beginPath();
         ctx.moveTo(Math.cos(p1Angle) * radius, Math.sin(p1Angle) * radius);
         ctx.lineTo(Math.cos(p2Angle) * radius, Math.sin(p2Angle) * radius);
         ctx.stroke();
+        
         ctx.globalAlpha = 1;
+        ctx.setLineDash([]);
     });
 }
 
@@ -537,6 +657,14 @@ function drawPlanets(radius) {
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
         
+        // Gezegen pozisyon çizgisi
+        ctx.strokeStyle = '#CCC';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * (radius - 25), Math.sin(angle) * (radius - 25));
+        ctx.lineTo(Math.cos(angle) * (radius + 5), Math.sin(angle) * (radius + 5));
+        ctx.stroke();
+        
         // Gezegen sembolü
         ctx.save();
         ctx.translate(x, y);
@@ -545,18 +673,25 @@ function drawPlanets(radius) {
         // Arka plan
         ctx.fillStyle = 'white';
         ctx.beginPath();
-        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.arc(0, 0, 13, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = data.color;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
         ctx.stroke();
         
         // Sembol
         ctx.fillStyle = data.color;
-        ctx.font = 'bold 16px Arial';
+        ctx.font = 'bold 15px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(data.symbol, 0, 0);
+        
+        // Derece bilgisi
+        const degree = Math.floor(data.longitude % 30);
+        const minutes = Math.floor((data.longitude % 1) * 60);
+        ctx.font = '7px Arial';
+        ctx.fillStyle = '#333';
+        ctx.fillText(`${degree}°${String(minutes).padStart(2, '0')}'`, 0, 20);
         
         ctx.restore();
     });
