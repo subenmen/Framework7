@@ -62,35 +62,66 @@ const aspectTypes = {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Uygulama başlatılıyor...');
     
+    // Anime.js kontrol
+    if (typeof anime === 'undefined') {
+        console.error('❌ Anime.js yüklenmedi! Animasyonlar çalışmayacak.');
+    } else {
+        console.log('✅ Anime.js yüklendi');
+    }
+    
     initializeStars();
     initializeCanvas();
     initializeControls();
     initializeZodiacWheel();
     
-    // Buton event listeners
-    document.getElementById('generate-chart').addEventListener('click', generateChart);
+    // Global fonksiyonlar (onclick için)
+    window.generateChartNow = function() {
+        console.log('🎯 Harita Oluştur butonuna tıklandı!');
+        generateChart();
+    };
     
-    // Test butonu
+    window.testChartNow = function() {
+        console.log('🧪 Test butonu tıklandı!');
+        const testData = {
+            name: 'Test Haritası',
+            birthDate: '1993-01-31',
+            birthTime: '15:00',
+            city: 'Ankara',
+            latitude: 39.93,
+            longitude: 32.85
+        };
+        calculateChart(testData);
+    };
+    
+    // Buton event listeners (yedek)
+    const generateBtn = document.getElementById('generate-chart');
     const testBtn = document.getElementById('test-chart');
+    
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            console.log('📍 Event listener - Harita oluştur');
+            generateChart();
+        });
+        console.log('✅ Harita oluştur butonu event listener eklendi');
+    } else {
+        console.error('❌ generate-chart butonu bulunamadı!');
+    }
+    
     if (testBtn) {
         testBtn.addEventListener('click', () => {
-            console.log('🧪 Test haritası oluşturuluyor...');
-            // Test verileri: 31 Ocak 1993, 15:00, Ankara
-            const testData = {
-                name: 'Test Haritası',
-                birthDate: '1993-01-31',
-                birthTime: '15:00',
-                city: 'Ankara',
-                latitude: 39.93,
-                longitude: 32.85
-            };
-            calculateChart(testData);
+            console.log('📍 Event listener - Test haritası');
+            window.testChartNow();
         });
+        console.log('✅ Test butonu event listener eklendi');
+    } else {
+        console.error('❌ test-chart butonu bulunamadı!');
     }
     
     // Başlangıçta örnek harita göster
     console.log('📊 Başlangıç haritası yükleniyor...');
-    loadExampleChart();
+    setTimeout(() => {
+        loadExampleChart();
+    }, 500);
 });
 
 // Örnek harita yükle
