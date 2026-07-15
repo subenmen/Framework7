@@ -91,6 +91,8 @@ function loadExampleChart() {
 
 // Harita oluştur
 function generateChart() {
+    console.log('🔄 Harita oluşturuluyor...');
+    
     const citySelect = document.getElementById('city');
     const selectedOption = citySelect.options[citySelect.selectedIndex];
     
@@ -103,12 +105,16 @@ function generateChart() {
         longitude: parseFloat(selectedOption.dataset.lon)
     };
     
+    console.log('📋 Form verileri:', formData);
+    
     if (!formData.birthDate || !formData.birthTime) {
         alert('Lütfen doğum tarihi ve saati girin!');
         return;
     }
     
     calculateChart(formData);
+    
+    console.log('✅ Harita hesaplandı');
     
     // Form animasyonu
     anime({
@@ -131,6 +137,8 @@ function generateChart() {
 
 // Harita hesaplamaları
 function calculateChart(formData) {
+    console.log('🎨 Harita hesaplanıyor...', formData);
+    
     chartData.name = formData.name;
     chartData.birthDate = formData.birthDate;
     chartData.birthTime = formData.birthTime;
@@ -149,17 +157,25 @@ function calculateChart(formData) {
     // Midheaven hesapla
     chartData.midheaven = (chartData.ascendant + 90) % 360;
     
+    console.log('📐 Ascendant:', chartData.ascendant.toFixed(2), '°');
+    
     // Evleri hesapla (Placidus sistemi - basitleştirilmiş)
     calculateHouses();
     
     // Gezegen pozisyonlarını hesapla
     calculatePlanetPositions(birthDateTime);
     
+    console.log('🪐 Gezegenler hesaplandı:', Object.keys(chartData.planets).length);
+    
     // Aspectleri hesapla
     calculateAspects();
     
+    console.log('⭐ Aspectler:', chartData.aspects.length);
+    
     // Haritayı çiz
     drawChart();
+    
+    console.log('✅ Harita çizildi!');
     
     // Bilgi panelini güncelle
     updateInfoPanel();
@@ -292,12 +308,14 @@ function calculateAspects() {
 
 // Haritayı çiz
 function drawChart() {
+    console.log('🎨 Harita çiziliyor...');
     drawMainCircles();
     drawHouses();
     drawZodiacSigns();
     drawPlanets();
     drawAspects();
     drawSpecialPoints();
+    console.log('✨ Harita çizimi tamamlandı!');
 }
 
 // Ana çemberleri çiz
