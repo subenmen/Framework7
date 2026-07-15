@@ -3,59 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KUBEY - Astroloji Haritası v3.0.0</title>
-    <link rel="stylesheet" href="astrology.css?v=3.0.0">
+    <title>Profesyonel Astroloji Haritası - v3.1.0</title>
+    <link rel="stylesheet" href="astrology.css?v=3.1.0">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header>
-            <h1>🌌 Astroloji Haritası</h1>
-            <p class="version">v3.0.0 - 15.07.2026</p>
+            <h1>🌌 Profesyonel Doğum Haritası</h1>
+            <p class="version">v3.1.0 - Gerçek Astronomik Hesaplamalar</p>
         </header>
 
-        <!-- Form -->
         <div class="form-card">
             <h2>📋 Doğum Bilgileri</h2>
-            <form id="birth-form" onsubmit="return false;">
-                <div class="form-row">
-                    <label>📅 Tarih</label>
-                    <input type="date" id="birth-date" value="1993-01-31" required>
+            <div class="form-grid">
+                <div>
+                    <label>📅 Doğum Tarihi</label>
+                    <input type="date" id="birth-date" value="1993-01-31">
                 </div>
-                <div class="form-row">
-                    <label>🕐 Saat</label>
-                    <input type="time" id="birth-time" value="15:00" required>
+                <div>
+                    <label>🕐 Doğum Saati (Yerel)</label>
+                    <input type="time" id="birth-time" value="15:00">
                 </div>
-                <div class="form-row">
+                <div>
                     <label>📍 Şehir</label>
-                    <select id="city" required>
-                        <option value="ankara" data-lat="39.93" data-lon="32.85" selected>Ankara</option>
-                        <option value="istanbul" data-lat="41.01" data-lon="28.98">İstanbul</option>
-                        <option value="izmir" data-lat="38.42" data-lon="27.14">İzmir</option>
+                    <select id="city">
+                        <option value="ankara" data-lat="39.933" data-lon="32.850" data-tz="2" selected>Ankara</option>
+                        <option value="istanbul" data-lat="41.015" data-lon="28.980" data-tz="2">İstanbul</option>
+                        <option value="izmir" data-lat="38.420" data-lon="27.140" data-tz="2">İzmir</option>
                     </select>
                 </div>
-                <button type="button" onclick="createChart()" class="btn-primary">✨ Harita Oluştur</button>
-            </form>
+            </div>
+            <button onclick="generateChart()" class="btn-primary">✨ Harita Oluştur</button>
         </div>
 
-        <!-- Chart -->
-        <div class="chart-card">
-            <h2>🔮 Doğum Haritası</h2>
-            <div id="chart-area">
-                <canvas id="chart-canvas" width="600" height="600"></canvas>
-                <div id="chart-elements"></div>
+        <div class="chart-container">
+            <div class="chart-wrapper">
+                <canvas id="main-canvas" width="800" height="800"></canvas>
+                <div id="chart-overlays"></div>
             </div>
         </div>
 
-        <!-- Info -->
-        <div class="info-card">
-            <h3 id="info-title">Bilgi</h3>
-            <div id="info-content">
-                <p>Formu doldurup "Harita Oluştur" butonuna basın.</p>
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>📊 Harita Bilgileri</h3>
+                <div id="chart-info"></div>
+            </div>
+            <div class="info-card">
+                <h3>🪐 Gezegenler</h3>
+                <div id="planets-info"></div>
+            </div>
+            <div class="info-card">
+                <h3>⭐ Aspectler</h3>
+                <div id="aspects-info"></div>
             </div>
         </div>
     </div>
 
-    <script src="astrology.js?v=3.0.0"></script>
+    <script src="astrology.js?v=3.1.0"></script>
 </body>
 </html>
