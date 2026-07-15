@@ -21,18 +21,18 @@ let showHouses = true;
 
 // Burç bilgileri (0° Koç = 0°)
 const zodiacSigns = [
-    { name: 'Koç', symbol: '♈', start: 0 },
-    { name: 'Boğa', symbol: '♉', start: 30 },
-    { name: 'İkizler', symbol: '♊', start: 60 },
-    { name: 'Yengeç', symbol: '♋', start: 90 },
-    { name: 'Aslan', symbol: '♌', start: 120 },
-    { name: 'Başak', symbol: '♍', start: 150 },
-    { name: 'Terazi', symbol: '♎', start: 180 },
-    { name: 'Akrep', symbol: '♏', start: 210 },
-    { name: 'Yay', symbol: '♐', start: 240 },
-    { name: 'Oğlak', symbol: '♑', start: 270 },
-    { name: 'Kova', symbol: '♒', start: 300 },
-    { name: 'Balık', symbol: '♓', start: 330 }
+    { name: 'Koç', symbol: '♈', start: 0, key: 'aries' },
+    { name: 'Boğa', symbol: '♉', start: 30, key: 'taurus' },
+    { name: 'İkizler', symbol: '♊', start: 60, key: 'gemini' },
+    { name: 'Yengeç', symbol: '♋', start: 90, key: 'cancer' },
+    { name: 'Aslan', symbol: '♌', start: 120, key: 'leo' },
+    { name: 'Başak', symbol: '♍', start: 150, key: 'virgo' },
+    { name: 'Terazi', symbol: '♎', start: 180, key: 'libra' },
+    { name: 'Akrep', symbol: '♏', start: 210, key: 'scorpio' },
+    { name: 'Yay', symbol: '♐', start: 240, key: 'sagittarius' },
+    { name: 'Oğlak', symbol: '♑', start: 270, key: 'capricorn' },
+    { name: 'Kova', symbol: '♒', start: 300, key: 'aquarius' },
+    { name: 'Balık', symbol: '♓', start: 330, key: 'pisces' }
 ];
 
 // Gezegen bilgileri
@@ -360,7 +360,7 @@ function drawHouses() {
 function drawZodiacSigns() {
     zodiacSigns.forEach((sign, index) => {
         const angle = (sign.start + 15 - chartData.ascendant - 90) * Math.PI / 180;
-        const signElement = document.querySelector(`[data-sign="${sign.name.toLowerCase()}"]`);
+        const signElement = document.querySelector(`[data-sign="${sign.key}"]`);
         if (signElement) {
             const radius = 290;
             const x = 350 + Math.cos(angle) * radius;
@@ -474,7 +474,7 @@ function initializeZodiacWheel() {
     zodiacSigns.forEach((sign, index) => {
         const signDiv = document.createElement('div');
         signDiv.className = 'zodiac-sign';
-        signDiv.dataset.sign = sign.name.toLowerCase();
+        signDiv.dataset.sign = sign.key;
         signDiv.innerHTML = `
             <div class="sign-content">
                 <span class="sign-symbol">${sign.symbol}</span>
