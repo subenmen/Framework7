@@ -371,6 +371,7 @@ function drawZodiacSigns() {
             
             signElement.style.left = x + 'px';
             signElement.style.top = y + 'px';
+            signElement.style.transform = 'translate(-50%, -50%)';
         }
     });
 }
@@ -387,11 +388,12 @@ function drawPlanets() {
         const angle = (planetData.longitude - chartData.ascendant - 90) * Math.PI / 180;
         const radius = 265;
         
-        const x = center + Math.cos(angle) * radius - 35;
-        const y = center + Math.sin(angle) * radius - 35;
+        const x = center + Math.cos(angle) * radius;
+        const y = center + Math.sin(angle) * radius;
         
         planetElement.style.left = x + 'px';
         planetElement.style.top = y + 'px';
+        planetElement.style.transform = 'translate(-50%, -50%)';
         planetElement.style.display = 'flex';
         
         // Derece bilgisini güncelle
@@ -461,18 +463,20 @@ function drawSpecialPoints() {
     // Ascendant
     const ascElement = document.getElementById('ascendant');
     const ascAngle = (-90) * Math.PI / 180;
-    const ascX = center + Math.cos(ascAngle) * 310 - 25;
-    const ascY = center + Math.sin(ascAngle) * 310 - 25;
+    const ascX = center + Math.cos(ascAngle) * 310;
+    const ascY = center + Math.sin(ascAngle) * 310;
     ascElement.style.left = ascX + 'px';
     ascElement.style.top = ascY + 'px';
+    ascElement.style.transform = 'translate(-50%, -50%)';
     
     // Midheaven
     const mcElement = document.getElementById('midheaven');
     const mcAngle = (0) * Math.PI / 180;
-    const mcX = center + Math.cos(mcAngle) * 310 - 25;
-    const mcY = center + Math.sin(mcAngle) * 310 - 25;
+    const mcX = center + Math.cos(mcAngle) * 310;
+    const mcY = center + Math.sin(mcAngle) * 310;
     mcElement.style.left = mcX + 'px';
     mcElement.style.top = mcY + 'px';
+    mcElement.style.transform = 'translate(-50%, -50%)';
 }
 
 // Burç çemberini başlat
