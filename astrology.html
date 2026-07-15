@@ -107,8 +107,9 @@
     <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <!-- Swiss Ephemeris (Profesyonel Astroloji Hesaplamaları) -->
-    <script src="https://cdn.jsdelivr.net/npm/@swisseph/browser@1.1.1/dist/swisseph.browser.min.js"></script>
-    <script src="astrology-swisseph.js"></script>
-    <script src="astrology.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@swisseph/browser@1.1.1/dist/swisseph.browser.min.js" 
+            onerror="console.error('Swiss Ephemeris CDN yüklenemedi! Fallback kullanılacak.')"></script>
+    <script src="astrology-swisseph.js?v=2"></script>
+    <script src="astrology.js?v=2"></script>
 </body>
 </html>
