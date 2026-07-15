@@ -9,26 +9,29 @@
     <title>KUBEY - Profesyonel Astroloji Haritası</title>
     
     <script>
-        // Otomatik versiyon sistemi - Her yüklemede yeni timestamp
-        window.APP_VERSION = Date.now();
-        window.APP_VERSION_DATE = new Date().toLocaleString('tr-TR');
+        // GERÇEK VERSİYON NUMARASI (Manuel güncellenir)
+        window.APP_VERSION = '2.1.0';
+        window.BUILD_DATE = '15.07.2026';
+        
+        // Cache busting için timestamp (sadece arka planda kullanılır)
+        window.CACHE_BUSTER = Date.now();
         
         // CSS'i dinamik yükle
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
-        cssLink.href = 'astrology.css?v=' + APP_VERSION;
+        cssLink.href = 'astrology.css?v=' + CACHE_BUSTER;
         document.head.appendChild(cssLink);
         
         // Cache temizleme
         const lastVersion = localStorage.getItem('astro_version');
-        if (lastVersion !== APP_VERSION.toString()) {
+        if (lastVersion !== APP_VERSION) {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => caches.delete(name));
                 });
             }
-            localStorage.setItem('astro_version', APP_VERSION.toString());
-            console.log('✅ Yeni versiyon yüklendi:', APP_VERSION_DATE);
+            localStorage.setItem('astro_version', APP_VERSION);
+            console.log('✅ Yeni versiyon yüklendi: v' + APP_VERSION);
         }
     </script>
 </head>
@@ -39,7 +42,8 @@
             <h1 class="title">🌌 Profesyonel Astroloji Haritası</h1>
             <p class="subtitle">Doğum bilgilerinizi girin ve kişisel haritanızı oluşturun</p>
             <div class="version-info" id="version-info">
-                <span>📦 Versiyon: <span id="app-version">Yükleniyor...</span></span>
+                <span>📦 Versiyon: <span id="app-version" style="color: #4ade80;">Yükleniyor...</span></span>
+                <span style="margin-left: 15px;">📅 <span id="build-date"></span></span>
             </div>
         </div>
 
@@ -185,16 +189,23 @@
     <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script>
-        // JavaScript'i otomatik versiyon ile yükle
+        // JavaScript'i cache-buster ile yükle
         const scriptTag = document.createElement('script');
-        scriptTag.src = 'astrology.js?v=' + window.APP_VERSION;
+        scriptTag.src = 'astrology.js?v=' + window.CACHE_BUSTER;
         scriptTag.onload = function() {
             // Versiyon bilgisini göster
             const versionElement = document.getElementById('app-version');
+            const buildDateElement = document.getElementById('build-date');
+            
             if (versionElement) {
-                versionElement.textContent = window.APP_VERSION_DATE;
-                versionElement.style.color = '#4ade80';
+                versionElement.textContent = 'v' + window.APP_VERSION;
             }
+            
+            if (buildDateElement) {
+                buildDateElement.textContent = window.BUILD_DATE;
+            }
+            
+            console.log('🚀 KUBEY Astroloji v' + window.APP_VERSION + ' - ' + window.BUILD_DATE);
         };
         document.body.appendChild(scriptTag);
     </script>
