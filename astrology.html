@@ -10,12 +10,73 @@
     <div class="astro-container">
         <!-- Header -->
         <div class="header">
-            <h1 class="title">🌌 İnteraktif Astroloji Haritası</h1>
-            <p class="subtitle">Burçları ve gezegenleri sürükleyip yerleştirin</p>
+            <h1 class="title">🌌 Astroloji Haritası</h1>
+            <p class="subtitle">Doğum bilgilerinizi girin</p>
         </div>
 
-        <!-- Ana Astroloji Haritası -->
-        <div class="chart-wrapper">
+        <!-- Doğum Bilgileri Formu -->
+        <div class="birth-info-form" id="birth-form">
+            <h2>🎂 Doğum Bilgileri</h2>
+            
+            <div class="form-group">
+                <label for="birth-date">📅 Doğum Tarihi</label>
+                <input type="date" id="birth-date" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birth-time">🕐 Doğum Saati</label>
+                <input type="time" id="birth-time" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birth-city">📍 Doğum Yeri (Şehir)</label>
+                <select id="birth-city" class="form-input">
+                    <option value="">Şehir Seçin</option>
+                    <option value="istanbul">İstanbul</option>
+                    <option value="ankara">Ankara</option>
+                    <option value="izmir">İzmir</option>
+                    <option value="bursa">Bursa</option>
+                    <option value="antalya">Antalya</option>
+                    <option value="adana">Adana</option>
+                    <option value="gaziantep">Gaziantep</option>
+                    <option value="konya">Konya</option>
+                    <option value="trabzon">Trabzon</option>
+                    <option value="diyarbakir">Diyarbakır</option>
+                </select>
+            </div>
+            
+            <button id="calculate-chart" class="calculate-btn">✨ Haritamı Oluştur</button>
+        </div>
+
+        <!-- Sonuç Paneli -->
+        <div class="results-panel" id="results-panel" style="display: none;">
+            <h2>🔮 Astroloji Analizi</h2>
+            
+            <div class="result-card">
+                <h3>☀️ Güneş Burcunuz</h3>
+                <div id="sun-sign" class="result-content"></div>
+            </div>
+            
+            <div class="result-card">
+                <h3>⬆️ Yükselen Burcunuz (Ascendant)</h3>
+                <div id="rising-sign" class="result-content"></div>
+            </div>
+            
+            <div class="result-card">
+                <h3>🏠 12 Astroloji Evi</h3>
+                <div id="houses" class="houses-grid"></div>
+            </div>
+            
+            <div class="result-card">
+                <h3>🌙 Diğer Önemli Konumlar</h3>
+                <div id="other-positions" class="result-content"></div>
+            </div>
+            
+            <button id="new-calculation" class="control-btn">🔄 Yeni Hesaplama</button>
+        </div>
+
+        <!-- Ana Astroloji Haritası (Görsel) -->
+        <div class="chart-wrapper" id="chart-wrapper" style="display: none;">
             <canvas id="astro-canvas"></canvas>
             
             <!-- Merkez Güneş -->
@@ -134,19 +195,11 @@
         </div>
 
         <!-- Kontrol Paneli -->
-        <div class="controls">
-            <button id="rotate-left" class="control-btn">↶ Sola Döndür</button>
-            <button id="rotate-right" class="control-btn">↷ Sağa Döndür</button>
+        <div class="controls" id="controls" style="display: none;">
+            <button id="rotate-left" class="control-btn">↶ Döndür</button>
+            <button id="rotate-right" class="control-btn">↷ Döndür</button>
             <button id="reset-chart" class="control-btn">🔄 Sıfırla</button>
-            <button id="toggle-animation" class="control-btn">⏯️ Animasyon</button>
-        </div>
-
-        <!-- Bilgi Paneli -->
-        <div class="info-panel" id="info-panel">
-            <h3>🔮 Seçilen Element</h3>
-            <div id="info-content">
-                <p>Bir burç veya gezegen üzerine tıklayın</p>
-            </div>
+            <button id="show-chart" class="control-btn">🎨 Haritayı Göster</button>
         </div>
 
         <!-- Geri Dön Butonu -->
@@ -155,6 +208,8 @@
 
     <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <!-- Astronomy Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="astrology.js"></script>
 </body>
 </html>
