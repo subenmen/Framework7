@@ -423,27 +423,41 @@ function calculateLocalSiderealTime(date, longitude) {
 
 function calculateAscendant(lst, latitude) {
     try {
-        // LST'yi dereceye çevir
-        const lstDegrees = (lst * 15) % 360;
+        // LST'yi dereceye çevir (RAMC - Right Ascension of Midheaven)
+        const ramc = (lst * 15) % 360;
         
-        // Ekliptik eğimi (obliquity)
-        const obliquity = 23.4397; // derece
+        // Ekliptik eğimi (obliquity) - 2000.0 için
+        const obliquity = 23.4397;
         const oblRad = obliquity * Math.PI / 180;
         
         // Enlem radyana
         const latRad = latitude * Math.PI / 180;
         
-        // LST radyana
-        const lstRad = lstDegrees * Math.PI / 180;
+        // RAMC radyana
+        const ramcRad = ramc * Math.PI / 180;
         
-        // Ascendant hesapla
-        const y = -Math.cos(lstRad);
-        const x = -Math.sin(oblRad) * Math.tan(latRad) + Math.cos(oblRad) * Math.sin(lstRad);
+        // Ascendant hesaplama (standart formül)
+        // tan(Asc) = -cos(RAMC) / (sin(obliquity) * tan(lat) + cos(obliquity) * sin(RAMC))
         
-        let asc = Math.atan2(y, x) * 180 / Math.PI;
+        const numerator = -Math.cos(ramcRad);
+        const denominator = Math.sin(oblRad) * Math.tan(latRad) + Math.cos(oblRad) * Math.sin(ramcRad);
+        
+        let asc = Math.atan2(numerator, denominator) * 180 / Math.PI;
         
         // 0-360 aralığına normalize et
         asc = ((asc % 360) + 360) % 360;
+        
+        // Ascendant burcu
+        const ascSign = Math.floor(asc / 30);
+        
+        console.log('Ascendant Hesaplama:', {
+            lst: lst.toFixed(4),
+            ramc: ramc.toFixed(2),
+            latitude: latitude.toFixed(4),
+            ascendant: asc.toFixed(2),
+            sign: zodiacNames[ascSign],
+            degree: (asc % 30).toFixed(2)
+        });
         
         return asc;
     } catch (error) {
