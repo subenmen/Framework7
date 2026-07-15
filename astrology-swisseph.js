@@ -3,24 +3,30 @@
 let swe = null;
 let sweReady = false;
 
-// Swiss Ephemeris başlat
+// Swiss Ephemeris başlat (timeout ile)
 async function initSwissEph() {
     try {
-        console.log('Swiss Ephemeris başlatılıyor...');
+        console.log('🔬 Swiss Ephemeris başlatılıyor...');
         
-        // Global SwissEphemeris sınıfı
+        // 5 saniye bekle CDN yüklensin
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Global SwissEphemeris sınıfı kontrol
         if (typeof SwissEphemeris !== 'undefined') {
+            console.log('✅ SwissEphemeris class bulundu');
             swe = new SwissEphemeris();
             await swe.init();
             sweReady = true;
             console.log('✅ Swiss Ephemeris hazır!');
             return true;
         } else {
-            console.error('SwissEphemeris yüklenemedi!');
+            console.warn('⚠️ SwissEphemeris yüklenemedi! Fallback kullanılacak.');
+            sweReady = false;
             return false;
         }
     } catch (error) {
-        console.error('Swiss Ephemeris başlatma hatası:', error);
+        console.error('❌ Swiss Ephemeris başlatma hatası:', error);
+        sweReady = false;
         return false;
     }
 }

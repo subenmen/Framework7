@@ -160,21 +160,37 @@ async function calculateBirthChart() {
         console.log('Doğum tarihi (local):', birthDate);
         console.log('Doğum tarihi (UTC):', utcDate);
         
-        // Swiss Ephemeris ile hesaplama
-        console.log('🔬 Swiss Ephemeris ile profesyonel hesaplama...');
+        // Swiss Ephemeris ile hesaplama (fallback ile)
+        let planets, houses, aspects;
         
-        // Gezegen pozisyonlarını hesapla
-        const planets = await calculatePlanetsWithSwissEph(utcDate);
-        if (!planets) throw new Error('Gezegenler hesaplanamadı!');
+        if (sweReady && swe) {
+            console.log('🔬 Swiss Ephemeris ile profesyonel hesaplama...');
+            try {
+                // Gezegen pozisyonlarını hesapla
+                planets = await calculatePlanetsWithSwissEph(utcDate);
+                
+                // Yükselen ve evleri hesapla  
+                const housesData = await calculateHousesWithSwissEph(utcDate, cityData.lat, cityData.lon);
+                houses = housesData.cusps;
+                
+                // Aspectleri hesapla
+                aspects = calculateAspects(planets);
+                
+                console.log('✅ Swiss Ephemeris hesaplama tamamlandı!');
+            } catch (error) {
+                console.warn('⚠️ Swiss Ephemeris hatası, fallback kullanılıyor:', error);
+                planets = null;
+            }
+        }
         
-        // Yükselen ve evleri hesapla  
-        const housesData = await calculateHousesWithSwissEph(utcDate, cityData.lat, cityData.lon);
-        if (!housesData) throw new Error('Evler hesaplanamadı!');
-        
-        const houses = housesData.cusps;
-        
-        // Aspectleri hesapla
-        const aspects = calculateAspects(planets);
+        // Fallback: Swiss Ephemeris başarısız ise basit hesaplama
+        if (!planets) {
+            console.log('📊 Fallback hesaplama kullanılıyor...');
+            planets = calculatePlanetPositions(utcDate);
+            houses = calculateHouses(utcDate, cityData.lat, cityData.lon);
+            aspects = calculateAspects(planets);
+            console.log('✅ Fallback hesaplama tamamlandı!');
+        }
         
         currentChart = {
             date: dateInput.value,
