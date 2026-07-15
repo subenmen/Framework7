@@ -54,7 +54,11 @@ let chartScale = 1;
 let canvasVisible = false;
 
 // Sayfa yüklendiğinde
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Swiss Ephemeris başlat
+    console.log('🌟 Profesyonel astroloji sistemi başlatılıyor...');
+    await initSwissEph();
+    
     setupEventListeners();
     setDefaultDate();
     canvas = document.getElementById('astro-canvas');
@@ -62,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx = canvas.getContext('2d');
         setupCanvasInteraction();
     }
+    
+    console.log('✅ Sistem hazır!');
 });
 
 // Event listener'ları ayarla
@@ -154,20 +160,21 @@ async function calculateBirthChart() {
         console.log('Doğum tarihi (local):', birthDate);
         console.log('Doğum tarihi (UTC):', utcDate);
         
-        // Gezegen pozisyonlarını hesapla
-        console.log('Gezegenler hesaplanıyor...');
-        const planets = calculatePlanetPositions(utcDate);
-        console.log('Gezegenler:', planets);
+        // Swiss Ephemeris ile hesaplama
+        console.log('🔬 Swiss Ephemeris ile profesyonel hesaplama...');
         
-        // Yükselen ve evleri hesapla
-        console.log('Evler hesaplanıyor...');
-        const houses = calculateHouses(utcDate, cityData.lat, cityData.lon);
-        console.log('Evler:', houses);
+        // Gezegen pozisyonlarını hesapla
+        const planets = await calculatePlanetsWithSwissEph(utcDate);
+        if (!planets) throw new Error('Gezegenler hesaplanamadı!');
+        
+        // Yükselen ve evleri hesapla  
+        const housesData = await calculateHousesWithSwissEph(utcDate, cityData.lat, cityData.lon);
+        if (!housesData) throw new Error('Evler hesaplanamadı!');
+        
+        const houses = housesData.cusps;
         
         // Aspectleri hesapla
-        console.log('Aspectler hesaplanıyor...');
         const aspects = calculateAspects(planets);
-        console.log('Aspectler:', aspects);
         
         currentChart = {
             date: dateInput.value,
