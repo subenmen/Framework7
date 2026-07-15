@@ -10,19 +10,51 @@
     <div class="astro-container">
         <!-- Header -->
         <div class="header">
-            <h1 class="title">🌌 İnteraktif Astroloji Haritası</h1>
-            <p class="subtitle">Burçları ve gezegenleri sürükleyip yerleştirin</p>
+            <h1 class="title">🌌 Profesyonel Astroloji Haritası</h1>
+            <p class="subtitle">Doğum bilgilerinizi girin ve kişisel haritanızı oluşturun</p>
+        </div>
+
+        <!-- Doğum Bilgileri Formu -->
+        <div class="birth-form" id="birth-form">
+            <h3>📋 Doğum Bilgileri</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Ad Soyad</label>
+                    <input type="text" id="name" placeholder="Örn: Ahmet Yılmaz">
+                </div>
+                <div class="form-group">
+                    <label>Doğum Tarihi</label>
+                    <input type="date" id="birth-date" value="1993-01-31">
+                </div>
+                <div class="form-group">
+                    <label>Doğum Saati</label>
+                    <input type="time" id="birth-time" value="15:00">
+                </div>
+                <div class="form-group">
+                    <label>Şehir</label>
+                    <input type="text" id="city" placeholder="Örn: Ankara" value="Ankara">
+                </div>
+                <div class="form-group">
+                    <label>Enlem</label>
+                    <input type="text" id="latitude" placeholder="39.55" value="39.55">
+                </div>
+                <div class="form-group">
+                    <label>Boylam</label>
+                    <input type="text" id="longitude" placeholder="32.51" value="32.51">
+                </div>
+            </div>
+            <button id="generate-chart" class="generate-btn">✨ Harita Oluştur</button>
         </div>
 
         <!-- Ana Astroloji Haritası -->
-        <div class="chart-wrapper">
+        <div class="chart-wrapper" id="chart-wrapper">
             <canvas id="astro-canvas"></canvas>
             
-            <!-- Merkez Güneş -->
-            <div id="center-sun" class="center-element draggable">
-                <div class="sun-core">☀️</div>
-                <div class="sun-rays"></div>
-            </div>
+            <!-- Aspects Canvas (gezegen bağlantıları) -->
+            <canvas id="aspects-canvas"></canvas>
+            
+            <!-- 12 Ev Sistemi -->
+            <div class="houses-wheel" id="houses-wheel"></div>
 
             <!-- 12 Burç -->
             <div class="zodiac-wheel" id="zodiac-wheel">
@@ -101,32 +133,56 @@
                 </div>
             </div>
 
-            <!-- Gezegenler -->
-            <div class="planets-container">
-                <div class="planet draggable" id="mercury" data-planet="mercury">
-                    <span class="planet-symbol">☿</span>
-                    <span class="planet-name">Merkür</span>
+            <!-- Gezegenler ve Noktalar -->
+            <div class="planets-container" id="planets-container">
+                <div class="planet" id="sun" data-planet="sun" data-degree="0">
+                    <span class="planet-symbol">☉</span>
+                    <span class="planet-degree">0°</span>
                 </div>
-                <div class="planet draggable" id="venus" data-planet="venus">
-                    <span class="planet-symbol">♀</span>
-                    <span class="planet-name">Venüs</span>
-                </div>
-                <div class="planet draggable" id="mars" data-planet="mars">
-                    <span class="planet-symbol">♂</span>
-                    <span class="planet-name">Mars</span>
-                </div>
-                <div class="planet draggable" id="jupiter" data-planet="jupiter">
-                    <span class="planet-symbol">♃</span>
-                    <span class="planet-name">Jüpiter</span>
-                </div>
-                <div class="planet draggable" id="saturn" data-planet="saturn">
-                    <span class="planet-symbol">♄</span>
-                    <span class="planet-name">Satürn</span>
-                </div>
-                <div class="planet draggable" id="moon" data-planet="moon">
+                <div class="planet" id="moon" data-planet="moon" data-degree="0">
                     <span class="planet-symbol">☽</span>
-                    <span class="planet-name">Ay</span>
+                    <span class="planet-degree">0°</span>
                 </div>
+                <div class="planet" id="mercury" data-planet="mercury" data-degree="0">
+                    <span class="planet-symbol">☿</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="venus" data-planet="venus" data-degree="0">
+                    <span class="planet-symbol">♀</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="mars" data-planet="mars" data-degree="0">
+                    <span class="planet-symbol">♂</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="jupiter" data-planet="jupiter" data-degree="0">
+                    <span class="planet-symbol">♃</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="saturn" data-planet="saturn" data-degree="0">
+                    <span class="planet-symbol">♄</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="uranus" data-planet="uranus" data-degree="0">
+                    <span class="planet-symbol">♅</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="neptune" data-planet="neptune" data-degree="0">
+                    <span class="planet-symbol">♆</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+                <div class="planet" id="pluto" data-planet="pluto" data-degree="0">
+                    <span class="planet-symbol">♇</span>
+                    <span class="planet-degree">0°</span>
+                </div>
+            </div>
+            
+            <!-- Ascendant ve MC İşaretleri -->
+            <div class="special-point" id="ascendant" data-point="asc">
+                <span class="point-symbol">AC</span>
+            </div>
+            <div class="special-point" id="midheaven" data-point="mc">
+                <span class="point-symbol">MC</span>
             </div>
 
             <!-- Yıldızlar -->
@@ -138,15 +194,22 @@
             <button id="rotate-left" class="control-btn">↶ Sola Döndür</button>
             <button id="rotate-right" class="control-btn">↷ Sağa Döndür</button>
             <button id="reset-chart" class="control-btn">🔄 Sıfırla</button>
-            <button id="toggle-animation" class="control-btn">⏯️ Animasyon</button>
+            <button id="toggle-aspects" class="control-btn">🔗 Aspectler</button>
+            <button id="toggle-houses" class="control-btn">🏠 Evler</button>
         </div>
 
         <!-- Bilgi Paneli -->
         <div class="info-panel" id="info-panel">
-            <h3>🔮 Seçilen Element</h3>
+            <h3>🔮 Doğum Haritası Bilgileri</h3>
             <div id="info-content">
-                <p>Bir burç veya gezegen üzerine tıklayın</p>
+                <p>Lütfen doğum bilgilerinizi girin ve harita oluştur butonuna tıklayın</p>
             </div>
+        </div>
+
+        <!-- Aspect Tablosu -->
+        <div class="aspects-table" id="aspects-table">
+            <h3>⭐ Aspectler</h3>
+            <div id="aspects-list"></div>
         </div>
 
         <!-- Geri Dön Butonu -->
