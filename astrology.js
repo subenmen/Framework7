@@ -1,8 +1,8 @@
-// KUBEY Astroloji v5.1.0 - Harita + Yorum + Günlük Fal + Sinastri + Transit Takvimi + Ay Fazları + PWA
-// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + 7 ev sistemi
-console.log('🌟 Astroloji v5.1.0 yükleniyor...');
+// KUBEY Astroloji v5.2.0 - Harita + Yorum + Günlük Fal + Sinastri + Transitler + Ay Fazları + PWA
+// Chatbot artık TÜM harita verisini önce öğrenir, sonra yorumlar
+console.log('🌟 Astroloji v5.2.0 yükleniyor...');
 
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 
 const DEG = Math.PI / 180;
 
@@ -990,23 +990,8 @@ function fillDaily(c) {
     const moonSign = SIGNS[Math.floor(transits.moon / 30)];
     const sunSign = SIGNS[Math.floor(transits.sun / 30)];
     
-    // Transit -> natal aspectler (dar orb)
-    const hits = [];
-    for (const tKey of Object.keys(transits)) {
-        for (const nKey of Object.keys(c.positions)) {
-            let diff = Math.abs(transits[tKey] - c.positions[nKey].lon);
-            if (diff > 180) diff = 360 - diff;
-            for (const asp of ASPECT_TYPES) {
-                const orb = Math.abs(diff - asp.angle);
-                const maxOrb = (tKey === 'moon') ? 4 : 2.5;
-                if (orb <= maxOrb) {
-                    hits.push({ t: tKey, n: nKey, asp: asp, orb: orb });
-                    break;
-                }
-            }
-        }
-    }
-    hits.sort((a, b) => a.orb - b.orb);
+    // Transit -> natal aspectler (dar orb, chat bağlamıyla ortak fonksiyon)
+    const hits = todaysTransitHits(c, jdNow);
     
     // Enerji skoru
     let good = 0, hard = 0;
@@ -1381,17 +1366,101 @@ function getApiKey() {
     return localStorage.getItem('openai_api_key') || _K.join('');
 }
 
-function chartSummaryText() {
+// Bugünün transit-natal isabetleri (Günlük Fal ve chat bağlamı ortak kullanır)
+function todaysTransitHits(c, jdNow) {
+    const hits = [];
+    for (const tKey of Object.keys(PLANETS)) {
+        const tLon = geoLongitude(tKey, jdNow);
+        for (const nKey of Object.keys(c.positions)) {
+            let diff = Math.abs(tLon - c.positions[nKey].lon);
+            if (diff > 180) diff = 360 - diff;
+            for (const asp of ASPECT_TYPES) {
+                const orb = Math.abs(diff - asp.angle);
+                const maxOrb = (tKey === 'moon') ? 4 : 2.5;
+                if (orb <= maxOrb) {
+                    hits.push({ t: tKey, n: nKey, asp: asp, orb: orb });
+                    break;
+                }
+            }
+        }
+    }
+    hits.sort((a, b) => a.orb - b.orb);
+    return hits;
+}
+
+// Chatbot'un "öğrendiği" tam harita bağlamı: TÜM veriler tek metinde
+let learnedContext = null;
+let chartLearnedShown = false;
+
+function buildFullChartContext() {
     if (!chart) return 'Harita henüz hesaplanmadı.';
     const c = chart;
-    let s = `Doğum: ${c.dateVal} ${c.timeVal}, ${c.city}. `;
-    s += `Yükselen: ${fmtZodiac(c.asc)}. MC: ${fmtZodiac(c.mc)}. `;
+    const L = [];
+    
+    L.push(`DOĞUM BİLGİLERİ: ${c.dateVal}, saat ${c.timeVal} (UTC+${c.tz}), ${c.city} (${c.lat.toFixed(2)}K, ${c.lon.toFixed(2)}D). Ev sistemi: ${c.hsys}.`);
+    L.push(`EKSENLER: Yükselen (AC): ${fmtZodiac(c.asc)} | MC (tepe noktası): ${fmtZodiac(c.mc)} | Alçalan (DC): ${fmtZodiac(norm360(c.asc + 180))} | IC: ${fmtZodiac(norm360(c.mc + 180))}.`);
+    
+    L.push('GEZEGEN KONUMLARI: ' + Object.keys(c.positions).map(k => {
+        const p = c.positions[k];
+        return `${PLANETS[k].name} ${fmtZodiac(p.lon)} ${p.house}. evde${p.retro ? ' (retro)' : ''}`;
+    }).join(' | '));
+    
+    L.push('EV BAŞLANGIÇLARI (cusps): ' + c.houses.map((h, i) => `${i + 1}. ev ${fmtZodiac(h)}`).join(' | '));
+    L.push('EV KONULARI: ' + HOUSE_THEMES.map((t, i) => `${i + 1}. ev = ${t}`).join(' | '));
+    
+    L.push('NATAL AÇILAR: ' + (c.aspects.length
+        ? c.aspects.map(a => `${PLANETS[a.p1].name} ${a.type.name} ${PLANETS[a.p2].name} (orb ${a.orb.toFixed(1)}°)`).join(' | ')
+        : 'belirgin açı yok'));
+    
+    const elements = { fire: 0, earth: 0, air: 0, water: 0 };
     for (const key of Object.keys(c.positions)) {
-        const p = c.positions[key];
-        s += `${PLANETS[key].name}: ${fmtZodiac(p.lon)} ${p.house}. evde${p.retro ? ' (R)' : ''}. `;
+        elements[SIGNS[Math.floor(c.positions[key].lon / 30)].element]++;
     }
-    s += 'Aspectler: ' + c.aspects.map(a => `${PLANETS[a.p1].name} ${a.type.name} ${PLANETS[a.p2].name}`).join(', ') + '.';
-    return s;
+    L.push(`ELEMENT DAĞILIMI: Ateş ${elements.fire}, Toprak ${elements.earth}, Hava ${elements.air}, Su ${elements.water} (10 gezegen üzerinden).`);
+    
+    // Bugünün gökyüzü + kişiye özel transitler
+    const now = new Date();
+    const jdNow = julianDate(now);
+    const phase = moonPhaseInfo(jdNow);
+    const tSun = geoLongitude('sun', jdNow);
+    const tMoon = geoLongitude('moon', jdNow);
+    L.push(`BUGÜNÜN GÖKYÜZÜ (${now.toLocaleDateString('tr-TR')}): Güneş ${fmtZodiac(tSun)}, Ay ${fmtZodiac(tMoon)}, Ay fazı: ${phase.name} (%${phase.illum} aydınlık).`);
+    
+    const hits = todaysTransitHits(c, jdNow);
+    if (hits.length) {
+        L.push('BUGÜN KİŞİYE ÖZEL TRANSİTLER: ' + hits.slice(0, 8).map(h =>
+            `Transit ${PLANETS[h.t].name}, natal ${PLANETS[h.n].name}'e ${h.asp.name.toLowerCase()} (orb ${h.orb.toFixed(1)}°)`
+        ).join(' | '));
+    } else {
+        L.push('BUGÜN KİŞİYE ÖZEL TRANSİTLER: belirgin transit yok, sakin gökyüzü.');
+    }
+    
+    return L.join('\n');
+}
+
+function getChartContext() {
+    if (!learnedContext) learnedContext = buildFullChartContext();
+    return learnedContext;
+}
+
+// Önce öğren: tüm veriyi hafızaya al, kullanıcıya öğrendiğini göster
+function learnChart(showMessage) {
+    learnedContext = buildFullChartContext();
+    if (showMessage && chart) {
+        const c = chart;
+        const sunSign = SIGNS[Math.floor(c.positions.sun.lon / 30)];
+        const moonSign = SIGNS[Math.floor(c.positions.moon.lon / 30)];
+        const ascSign = SIGNS[Math.floor(c.asc / 30)];
+        addMsg(
+            `📖 Haritanı baştan sona öğrendim!\n\n` +
+            `☉ Güneş: ${sunSign.symbol} ${sunSign.name} (${c.positions.sun.house}. ev)\n` +
+            `☽ Ay: ${moonSign.symbol} ${moonSign.name} (${c.positions.moon.house}. ev)\n` +
+            `⬆️ Yükselen: ${ascSign.symbol} ${ascSign.name}\n\n` +
+            `Hafızamda: 🪐 10 gezegen konumu · 🏠 12 ev · ⭐ ${c.aspects.length} natal açı · 🔥 element dağılımı · 📅 bugünün transitleri ve ay fazı.\n\n` +
+            `Artık tüm verilerinin üzerinden yorum yapabilirim — sor bakalım! ✨`,
+            'bot'
+        );
+    }
 }
 
 function addMsg(text, who) {
@@ -1416,17 +1485,40 @@ function localBotAnswer(q) {
     if (ql.includes('yükselen')) {
         return `Yükselenin ${fmtZodiac(c.asc)}. ${ASC_TEXT[ascSign]}`;
     }
+    if (ql.includes('dolunay') || ql.includes('yeni ay') || ql.includes('ay fazı') || ql.includes('ay fazi')) {
+        const jdNow = julianDate(new Date());
+        const phase = moonPhaseInfo(jdNow);
+        const nn = findNextPhase(jdNow, 0), nf = findNextPhase(jdNow, 180);
+        return `Bugün ${phase.emoji} ${phase.name} (%${phase.illum} aydınlık). ${phase.text} Sonraki Yeni Ay: ${nn ? fmtTrDate(jdToDate(nn)) : '-'}. Sonraki Dolunay: ${nf ? fmtTrDate(jdToDate(nf)) : '-'}.`;
+    }
+    if (ql.includes('transit')) {
+        const hits = todaysTransitHits(c, julianDate(new Date()));
+        if (!hits.length) return 'Bugün haritana dar açı yapan önemli bir transit yok — sakin bir gökyüzü. Önümüzdeki 30 gün için "📅 Transitler" sekmesine bakabilirsin.';
+        const list = hits.slice(0, 4).map(h => `${PLANETS[h.t].name} natal ${PLANETS[h.n].name}'e ${h.asp.name.toLowerCase()}`).join('; ');
+        return `Bugün sana özel ${hits.length} transit var: ${list}. Detaylar "🌙 Günlük Fal" sekmesinde, 30 günlük liste "📅 Transitler" sekmesinde.`;
+    }
+    if (ql.includes('element') || ql.includes('dominant') || ql.includes('baskın')) {
+        const elements = { fire: 0, earth: 0, air: 0, water: 0 };
+        for (const key of Object.keys(c.positions)) elements[SIGNS[Math.floor(c.positions[key].lon / 30)].element]++;
+        const names = { fire: '🔥 Ateş', earth: '🌍 Toprak', air: '💨 Hava', water: '💧 Su' };
+        const sorted = Object.keys(elements).sort((a, b) => elements[b] - elements[a]);
+        return `Element dağılımın: ${sorted.map(e => `${names[e]} ${elements[e]}`).join(', ')}. Baskın elementin ${names[sorted[0]]} — haritanın genel tonu bu elementin nitelikleriyle şekilleniyor.`;
+    }
+    if (ql.includes('açı') || ql.includes('aspect') || ql.includes('aci ') || ql.includes('acılar')) {
+        const top = c.aspects.slice(0, 5).map(a => `${PLANETS[a.p1].name} ${a.type.name} ${PLANETS[a.p2].name} (${a.orb.toFixed(1)}°)`).join('; ');
+        return `Haritanda ${c.aspects.length} natal açı var. En dar orblılar: ${top}. Detaylar "⭐ Aspects" sekmesinde.`;
+    }
+    if (/(^|\s)ay(\s|'|$)/.test(ql) || ql.includes('ayım') || ql.includes('duygu')) {
+        return `Ayın ${fmtZodiac(c.positions.moon.lon)}, ${c.positions.moon.house}. evde. ${MOON_TEXT[moonSign]}`;
+    }
     if (ql.includes('güneş') || ql.includes('gunes') || ql.includes('burcum')) {
         return `Güneşin ${fmtZodiac(c.positions.sun.lon)}, ${c.positions.sun.house}. evde. ${SUN_TEXT[sunSign]}`;
-    }
-    if (ql.includes('ay ') || ql.includes('ayım') || ql.includes('duygu')) {
-        return `Ayın ${fmtZodiac(c.positions.moon.lon)}, ${c.positions.moon.house}. evde. ${MOON_TEXT[moonSign]}`;
     }
     if (ql.includes('bugün') || ql.includes('günlük') || ql.includes('fal') || ql.includes('günüm')) {
         document.querySelector('[data-tab="daily"]').click();
         return 'Günlük falına baktım — "🌙 Günlük Fal" sekmesini açtım, oradan detayları görebilirsin! ✨';
     }
-    if (ql.includes('aşk') || ql.includes('ask') || ql.includes('ilişki') || ql.includes('sevgili')) {
+    if (ql.includes('aşk') || /(^|\s)ask/.test(ql) || ql.includes('ilişki') || ql.includes('sevgili')) {
         const venus = c.positions.venus;
         const vSign = SIGNS[Math.floor(venus.lon / 30)].name;
         return `Aşk hayatın için Venüs'üne baktım: ${fmtZodiac(venus.lon)}, ${venus.house}. evde. Sevgi dilin ${vSign} tarzında; ${HOUSE_THEMES[venus.house - 1]} alanında aşkı deneyimlersin.`;
@@ -1456,10 +1548,11 @@ async function askGPT(question) {
     const messages = [
         {
             role: 'system',
-            content: 'Sen deneyimli, samimi bir Türk astrologsun. Kullanıcının doğum haritası verisi: ' +
-                     chartSummaryText() +
-                     ' Bugünün tarihi: ' + new Date().toLocaleDateString('tr-TR') +
-                     '. Kısa (en fazla 150 kelime), sıcak ve Türkçe yanıtlar ver. Emoji kullanabilirsin.'
+            content: 'Sen deneyimli, samimi bir Türk astrologsun. Aşağıda kullanıcının doğum haritasının TÜM verileri var. ' +
+                     'Yorumlarını bu verilerin TAMAMINI dikkate alarak yap: soruyla ilgili gezegenleri, evleri, natal açıları ve ' +
+                     'bugünün transitlerini birlikte değerlendir; somut derece/ev/açı bilgisine atıfta bulun.\n\n' +
+                     '=== HARİTA VERİLERİ ===\n' + getChartContext() + '\n=== VERİ SONU ===\n\n' +
+                     'Kurallar: Türkçe yanıt ver, sıcak ve samimi ol, en fazla 200 kelime. Emoji kullanabilirsin.'
         },
         ...chatHistory.slice(-6),
         { role: 'user', content: question }
@@ -1474,7 +1567,7 @@ async function askGPT(question) {
         body: JSON.stringify({
             model: 'gpt-4o-mini',
             messages: messages,
-            max_tokens: 400,
+            max_tokens: 500,
             temperature: 0.8
         })
     });
@@ -1516,7 +1609,19 @@ function initChat() {
     const fab = document.getElementById('chat-fab');
     const panel = document.getElementById('chat-panel');
     
-    fab.addEventListener('click', () => panel.classList.toggle('open'));
+    fab.addEventListener('click', () => {
+        panel.classList.toggle('open');
+        // İlk açılışta: önce tüm harita verisini öğren, sonra hazır olduğunu bildir
+        if (panel.classList.contains('open') && !chartLearnedShown) {
+            chartLearnedShown = true;
+            const typing = addMsg('📖 Haritanı öğreniyorum: gezegenler, evler, açılar, elementler ve bugünün transitleri... ✨', 'bot');
+            typing.classList.add('typing');
+            setTimeout(() => {
+                typing.remove();
+                learnChart(true);
+            }, 1200);
+        }
+    });
     document.getElementById('chat-close').addEventListener('click', () => panel.classList.remove('open'));
     
     document.getElementById('chat-settings').addEventListener('click', () => {
@@ -1555,6 +1660,16 @@ function generateAll() {
     fillInterpretation(c);
     fillDaily(c);
     fillTransitCalendar(c);
+    
+    // Harita değişti: chatbot yeni veriyi baştan öğrensin
+    learnedContext = null;
+    if (chartLearnedShown) {
+        learnChart(false);
+        const panel = document.getElementById('chat-panel');
+        if (panel && panel.classList.contains('open')) {
+            addMsg('🔄 Haritan güncellendi — yeni verilerin tamamını yeniden öğrendim!', 'bot');
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
