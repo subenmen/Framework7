@@ -1,6 +1,8 @@
-// KUBEY Astroloji v5.0.1 - Doğum haritası + Yorum + Günlük Fal + Astro Chat
+// KUBEY Astroloji v5.1.0 - Harita + Yorum + Günlük Fal + Sinastri + Transit Takvimi + Ay Fazları + PWA
 // Gerçek astronomik hesaplamalar: JPL Kepler elemanları + 7 ev sistemi
-console.log('🌟 Astroloji v5.0.1 yükleniyor...');
+console.log('🌟 Astroloji v5.1.0 yükleniyor...');
+
+const APP_VERSION = '5.1.0';
 
 const DEG = Math.PI / 180;
 
@@ -363,16 +365,29 @@ function calcAspects(positions) {
     return found;
 }
 
-// ---------- ANA HESAPLAMA ----------
-function computeChart() {
-    const dateVal = document.getElementById('birth-date').value;
-    const timeVal = document.getElementById('birth-time').value;
-    const sel = document.getElementById('city');
-    const opt = sel.options[sel.selectedIndex];
+// ---------- ZAMAN DİLİMİ (Türkiye, tarihe göre yaz saati) ----------
+// 7 Eylül 2016'dan itibaren kalıcı UTC+3. Öncesinde: kış UTC+2,
+// yaz saati (Mart sonu Pazar - Ekim sonu Pazar arası) UTC+3.
+function turkeyUtcOffset(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (y > 2016 || (y === 2016 && (m > 9 || (m === 9 && d >= 7)))) return 3;
+    if (y < 1985) return 2;
     
-    const lat = parseFloat(opt.dataset.lat);
-    const lon = parseFloat(opt.dataset.lon);
-    const tz = parseFloat(opt.dataset.tz);
+    const lastSunday = (year, month) => {
+        const last = new Date(Date.UTC(year, month, 0)); // ayın son günü
+        return last.getUTCDate() - last.getUTCDay();
+    };
+    const marS = lastSunday(y, 3);
+    const octS = lastSunday(y, 10);
+    const afterStart = (m > 3) || (m === 3 && d >= marS);
+    const beforeEnd = (m < 10) || (m === 10 && d < octS);
+    return (afterStart && beforeEnd) ? 3 : 2;
+}
+
+// ---------- ANA HESAPLAMA ----------
+// Saf hesaplama: parametrelerden harita objesi üretir (sinastri için de kullanılır)
+function calcChartData(p) {
+    const { dateVal, timeVal, lat, lon, tz, hsys, city } = p;
     
     // UTC'ye çevir
     const [hh, mm] = timeVal.split(':').map(Number);
@@ -381,10 +396,9 @@ function computeChart() {
     
     const jd = julianDate(utc);
     const gst = gmst(jd);
-    const lstHours = (gst + lon / 15) % 24;
+    const lstHours = ((gst + lon / 15) % 24 + 24) % 24;
     const lstDeg = lstHours * 15;
     
-    const hsys = document.getElementById('house-system').value;
     const asc = calcAscendant(lstDeg, lat);
     const mc = calcMC(lstDeg);
     const houses = calcHouses(asc, mc, lstDeg, lat, hsys);
@@ -394,7 +408,7 @@ function computeChart() {
     for (const key of Object.keys(PLANETS)) {
         const lonNow = geoLongitude(key, jd);
         const lonNext = geoLongitude(key, jd + 1);
-        let delta = norm360(lonNext - lonNow);
+        const delta = norm360(lonNext - lonNow);
         const retro = delta > 180;
         positions[key] = { lon: lonNow, retro: retro, house: 0 };
     }
@@ -404,14 +418,38 @@ function computeChart() {
     
     const aspects = calcAspects(positions);
     
-    chart = {
-        dateVal, timeVal, tz,
-        city: opt.text, lat, lon,
+    return {
+        dateVal, timeVal, tz, city, lat, lon,
         utc, jd, lstHours, hsys,
         asc, mc, houses, positions, aspects
     };
+}
+
+function computeChart() {
+    const dateVal = document.getElementById('birth-date').value;
+    const timeVal = document.getElementById('birth-time').value;
+    const sel = document.getElementById('city');
+    const opt = sel.options[sel.selectedIndex];
+    const hsys = document.getElementById('house-system').value;
     
-    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(asc), '| MC:', fmtZodiac(mc));
+    const tz = turkeyUtcOffset(dateVal);
+    
+    chart = calcChartData({
+        dateVal, timeVal,
+        lat: parseFloat(opt.dataset.lat),
+        lon: parseFloat(opt.dataset.lon),
+        tz, hsys,
+        city: opt.text
+    });
+    
+    // Doğum bilgisi hafızası
+    try {
+        localStorage.setItem('astro_birth', JSON.stringify({
+            d: dateVal, t: timeVal, c: sel.value, h: hsys
+        }));
+    } catch (e) { /* localStorage kapalı olabilir */ }
+    
+    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(chart.asc), '| MC:', fmtZodiac(chart.mc), '| UTC+' + tz);
     return chart;
 }
 
@@ -647,7 +685,7 @@ function drawWheel(c) {
 function fillInfo(c) {
     const [Y, Mo, Dy] = c.dateVal.split('-').map(Number);
     document.getElementById('info-date').innerHTML =
-        `<i>${Dy} ${MONTHS_EN[Mo - 1]} ${Y} - ${c.timeVal}</i> (EET)`;
+        `<i>${Dy} ${MONTHS_EN[Mo - 1]} ${Y} - ${c.timeVal}</i> (UTC+${c.tz})`;
     
     const utcH = String(c.utc.getUTCHours()).padStart(2, '0');
     const utcM = String(c.utc.getUTCMinutes()).padStart(2, '0');
@@ -893,6 +931,52 @@ const TRANSIT_ASPECT_TEXT = {
     'Altmışlık': 'alanında değerlendirebileceğiniz bir fırsat sunuyor'
 };
 
+// ============================================================
+// AY FAZLARI
+// ============================================================
+const MOON_PHASES = [
+    { emoji: '🌑', name: 'Yeni Ay',              text: 'Yeni başlangıçlar için tohum ekme zamanı. Niyetlerinizi belirleyin.' },
+    { emoji: '🌒', name: 'Büyüyen Hilal',        text: 'Niyetleriniz filizleniyor — ilk adımları atın, kararlı olun.' },
+    { emoji: '🌓', name: 'İlk Dördün',           text: 'İlk engeller görünür — harekete geçme ve karar verme zamanı.' },
+    { emoji: '🌔', name: 'Büyüyen Şişkin Ay',    text: 'Enerji doruğa yaklaşıyor — detayları düzeltin, son rötuşları yapın.' },
+    { emoji: '🌕', name: 'Dolunay',              text: 'Duygular ve farkındalık zirvede — sonuçları toplayın, kutlayın.' },
+    { emoji: '🌖', name: 'Küçülen Şişkin Ay',    text: 'Paylaşma ve şükretme zamanı — öğrendiklerinizi aktarın.' },
+    { emoji: '🌗', name: 'Son Dördün',           text: 'Bırakma zamanı — işe yaramayanı hayatınızdan çıkarın.' },
+    { emoji: '🌘', name: 'Küçülen Hilal',        text: 'Dinlenme ve içe dönüş — yeni döngü öncesi enerji toplayın.' }
+];
+
+function moonElongation(jd) {
+    return norm360(geoLongitude('moon', jd) - geoLongitude('sun', jd));
+}
+
+function moonPhaseInfo(jd) {
+    const el = moonElongation(jd);
+    const illum = Math.round((1 - Math.cos(el * DEG)) / 2 * 100);
+    const idx = Math.round(el / 45) % 8;
+    return { ...MOON_PHASES[idx], elongation: el, illum: illum };
+}
+
+// Bir sonraki Yeni Ay (target=0) veya Dolunay (target=180) - saatlik tarama
+function findNextPhase(jdStart, target) {
+    let prev = moonElongation(jdStart);
+    for (let h = 1; h <= 24 * 32; h++) {
+        const jd = jdStart + h / 24;
+        const el = moonElongation(jd);
+        if (target === 0 && el < prev) return jd;               // 360 -> 0 geçişi
+        if (target === 180 && prev < 180 && el >= 180) return jd;
+        prev = el;
+    }
+    return null;
+}
+
+function jdToDate(jd) {
+    return new Date((jd - 2440587.5) * 86400000);
+}
+
+function fmtTrDate(date) {
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+}
+
 function fillDaily(c) {
     const now = new Date();
     const jdNow = julianDate(now);
@@ -936,7 +1020,21 @@ function fillDaily(c) {
     
     const dateStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
     
+    // Ay fazı
+    const phase = moonPhaseInfo(jdNow);
+    const nextNew = findNextPhase(jdNow, 0);
+    const nextFull = findNextPhase(jdNow, 180);
+    
     let html = `<div class="daily-date">📅 ${dateStr}</div>`;
+    html += `<div class="moon-phase-card">
+        <div class="mp-emoji">${phase.emoji}</div>
+        <div class="mp-info">
+            <h4>${phase.name} — %${phase.illum} aydınlık</h4>
+            <p>${phase.text}</p>
+            <p class="mp-next">🌑 Sonraki Yeni Ay: <strong>${nextNew ? fmtTrDate(jdToDate(nextNew)) : '-'}</strong><br>
+            🌕 Sonraki Dolunay: <strong>${nextFull ? fmtTrDate(jdToDate(nextFull)) : '-'}</strong></p>
+        </div>
+    </div>`;
     html += `<div class="r-card gold"><h4>Günün Enerjisi</h4><p class="daily-stars">${stars}</p><p>Gökyüzünde Güneş ${sunSign.symbol} ${sunSign.name}, Ay ${moonSign.symbol} ${moonSign.name} burcunda ilerliyor.</p></div>`;
     html += `<div class="r-card blue"><h4>🌙 Ay ${moonSign.symbol} ${moonSign.name} burcunda</h4><p>${MOON_DAILY[moonSign.name]}</p></div>`;
     
@@ -961,6 +1059,307 @@ function fillDaily(c) {
     html += `<div class="r-card red"><h4>💡 Günün Tavsiyesi</h4><p>${advice}</p></div>`;
     
     document.getElementById('daily-content').innerHTML = html;
+}
+
+// ============================================================
+// SİNASTRİ (İLİŞKİ UYUMU)
+// ============================================================
+const SYN_ORBS = { 'Kavuşum': 7, 'Karşıtlık': 6, 'Üçgen': 6, 'Kare': 5, 'Altmışlık': 4 };
+const SYN_WEIGHTS = {
+    sun: 3, moon: 3, venus: 3, mars: 2.5, asc: 2.5,
+    mercury: 2, jupiter: 1.5, saturn: 1.5,
+    uranus: 0.7, neptune: 0.7, pluto: 0.7
+};
+// Aspect uyum katsayısı (-1 .. +1)
+const SYN_FACTOR = { 'Üçgen': 1, 'Altmışlık': 0.7, 'Kavuşum': 0.75, 'Karşıtlık': -0.4, 'Kare': -0.7 };
+
+const SYN_PAIR_TEXT = {
+    'moon-sun': 'Klasik ruh eşi göstergesi: biri özüyle, diğeri duygusuyla besliyor. 💫',
+    'mars-venus': 'Güçlü fiziksel çekim ve tutku göstergesi. 🔥',
+    'moon-venus': 'Duygusal şefkat ve romantizm uyumu. 🌸',
+    'moon-moon': 'Duygusal dünyalar arasında doğrudan rezonans var.',
+    'mercury-mercury': 'Zihinsel bağ — konuşmalar hiç bitmez.',
+    'venus-venus': 'Sevgi dilleri ve zevkler birbiriyle etkileşimde.',
+    'sun-sun': 'İki kimlik doğrudan temasta — birbirinizi aynada görürsünüz.',
+    'asc-sun': 'Biri diğerinin dış kimliğinde kendini görüyor — anında tanışıklık hissi.',
+    'asc-moon': 'Duygusal olarak "evinde" hissettiren bir bağ.',
+    'asc-venus': 'İlk bakışta hoşlanma etkisi güçlü.',
+    'saturn-sun': 'Ciddiyet ve kalıcılık teması — ilişkiyi yapılandırır.',
+    'moon-saturn': 'Duygusal sorumluluk bağı — olgunlaştıran ama zaman zaman kısıtlayan.'
+};
+
+function synName(key) {
+    return key === 'asc' ? 'Yükselen (AC)' : PLANETS[key].name;
+}
+function synSymbol(key) {
+    return key === 'asc' ? 'AC' : PLANETS[key].symbol;
+}
+function synColor(key) {
+    return key === 'asc' ? '#111' : PLANETS[key].color;
+}
+
+const SYN_ASPECT_TONE = {
+    'Üçgen': 'akıcı ve destekleyici bir uyum',
+    'Altmışlık': 'değerlendirilmeyi bekleyen güzel bir fırsat',
+    'Kavuşum': 'çok güçlü ve yoğun bir birleşme',
+    'Kare': 'sürtüşmeli ama büyüten bir dinamik',
+    'Karşıtlık': 'mıknatıs gibi çeken fakat denge isteyen bir çekim'
+};
+
+function calcSynastryAspects(chartA, chartB) {
+    const A = { ...Object.fromEntries(Object.keys(chartA.positions).map(k => [k, chartA.positions[k].lon])), asc: chartA.asc };
+    const B = { ...Object.fromEntries(Object.keys(chartB.positions).map(k => [k, chartB.positions[k].lon])), asc: chartB.asc };
+    
+    const found = [];
+    for (const ka of Object.keys(A)) {
+        for (const kb of Object.keys(B)) {
+            let diff = Math.abs(A[ka] - B[kb]);
+            if (diff > 180) diff = 360 - diff;
+            for (const asp of ASPECT_TYPES) {
+                const orb = Math.abs(diff - asp.angle);
+                if (orb <= SYN_ORBS[asp.name]) {
+                    const weight = (SYN_WEIGHTS[ka] || 1) * (SYN_WEIGHTS[kb] || 1);
+                    found.push({ a: ka, b: kb, type: asp, orb, weight, factor: SYN_FACTOR[asp.name] });
+                    break;
+                }
+            }
+        }
+    }
+    return found;
+}
+
+function synScore(aspList, filterSet) {
+    let total = 0, weightSum = 0;
+    aspList.forEach(x => {
+        if (filterSet && !(filterSet.has(x.a) || filterSet.has(x.b))) return;
+        total += x.factor * x.weight;
+        weightSum += x.weight;
+    });
+    if (weightSum === 0) return 50;
+    return Math.max(8, Math.min(98, Math.round(50 + 45 * (total / weightSum))));
+}
+
+function computeSynastry() {
+    if (!chart) generateAll();
+    
+    const pd = document.getElementById('p-date').value;
+    const pt = document.getElementById('p-time').value;
+    const psel = document.getElementById('p-city');
+    const popt = psel.options[psel.selectedIndex];
+    const out = document.getElementById('synastry-content');
+    
+    if (!pd || !pt) {
+        out.innerHTML = '<div class="r-card red"><p>Lütfen partnerin doğum tarihi ve saatini girin.</p></div>';
+        return;
+    }
+    
+    const partner = calcChartData({
+        dateVal: pd, timeVal: pt,
+        lat: parseFloat(popt.dataset.lat),
+        lon: parseFloat(popt.dataset.lon),
+        tz: turkeyUtcOffset(pd),
+        hsys: chart.hsys,
+        city: popt.text
+    });
+    
+    const synAspects = calcSynastryAspects(chart, partner);
+    
+    const overall = synScore(synAspects, null);
+    const love = synScore(synAspects, new Set(['venus', 'mars', 'moon']));
+    const comm = synScore(synAspects, new Set(['mercury', 'moon', 'sun']));
+    const longTerm = synScore(synAspects, new Set(['saturn', 'jupiter', 'sun', 'asc']));
+    
+    const sunA = SIGNS[Math.floor(chart.positions.sun.lon / 30)];
+    const sunB = SIGNS[Math.floor(partner.positions.sun.lon / 30)];
+    const moonA = SIGNS[Math.floor(chart.positions.moon.lon / 30)];
+    const moonB = SIGNS[Math.floor(partner.positions.moon.lon / 30)];
+    
+    const verdict = overall >= 80 ? 'Yıldızlar sizin için parlıyor! Çok güçlü bir kozmik bağ. 💫'
+        : overall >= 65 ? 'Güzel bir uyum — destekleyici enerjiler baskın. 🌟'
+        : overall >= 50 ? 'Dengeli bir ilişki: hem uyum hem büyüten zorluklar var. ⚖️'
+        : overall >= 35 ? 'Zorlayıcı açılar baskın — emek isteyen ama öğreten bir bağ. 🔧'
+        : 'Gökyüzü bu ikiliye ciddi dersler vermiş — sabır ve bilinçli çaba şart. 🌋';
+    
+    let html = `<div class="syn-score-card">
+        <div class="syn-big">${overall}%</div>
+        <p class="syn-verdict">${verdict}</p>
+        <div class="syn-pair-line">☉ ${sunA.symbol} ${sunA.name} + ☉ ${sunB.symbol} ${sunB.name} &nbsp;|&nbsp; ☽ ${moonA.symbol} ${moonA.name} + ☽ ${moonB.symbol} ${moonB.name}</div>
+    </div>`;
+    
+    const bars = [
+        { label: '❤️ Aşk & Çekim', val: love, color: '#e0507a' },
+        { label: '💬 İletişim', val: comm, color: '#3a7bd5' },
+        { label: '🏛️ Uzun Vade', val: longTerm, color: '#7a5af5' }
+    ];
+    html += '<div class="r-card"><h4>Kategori Skorları</h4>';
+    bars.forEach(b => {
+        html += `<div class="dom-bar">
+            <span class="dom-label" style="width:130px">${b.label}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${b.val}%;background:${b.color}"></div></div>
+            <span><strong>${b.val}%</strong></span>
+        </div>`;
+    });
+    html += '</div>';
+    
+    // En önemli sinastri açıları
+    const top = [...synAspects].sort((x, y) => (y.weight * Math.abs(y.factor)) - (x.weight * Math.abs(x.factor))).slice(0, 10);
+    if (top.length) {
+        let list = '';
+        top.forEach(x => {
+            const pairKey = [x.a, x.b].sort().join('-');
+            const special = SYN_PAIR_TEXT[pairKey] ? ' ' + SYN_PAIR_TEXT[pairKey] : '';
+            list += `<p><strong style="color:${x.type.color}">${synSymbol(x.a)} ${x.type.symbol} ${synSymbol(x.b)}</strong> Sizin ${synName(x.a)}iniz ile partnerin ${synName(x.b)}i arasında ${x.type.name.toLowerCase()} — ${SYN_ASPECT_TONE[x.type.name]} (orb ${x.orb.toFixed(1)}°).${special}</p>`;
+        });
+        html += `<div class="r-card gold"><h4>⭐ Öne Çıkan Sinastri Açıları</h4>${list}</div>`;
+    } else {
+        html += '<div class="r-card"><p>İki harita arasında belirgin açı bulunamadı — nötr bir etkileşim.</p></div>';
+    }
+    
+    html += `<div class="r-card blue"><h4>ℹ️ Partner Haritası Özeti</h4>
+        <p>☉ Güneş: ${fmtZodiac(partner.positions.sun.lon)} · ☽ Ay: ${fmtZodiac(partner.positions.moon.lon)} · ⬆️ Yükselen: ${fmtZodiac(partner.asc)}</p>
+        <p>Doğum: ${pd} ${pt}, ${popt.text} (UTC+${partner.tz})</p></div>`;
+    
+    out.innerHTML = html;
+    console.log('💞 Sinastri hesaplandı — genel uyum:', overall + '%');
+}
+
+// ============================================================
+// TRANSİT TAKVİMİ (30 gün)
+// ============================================================
+function fillTransitCalendar(c) {
+    const now = new Date();
+    const jdNow = julianDate(now);
+    const TRANSIT_PLANETS = Object.keys(PLANETS).filter(k => k !== 'moon'); // Ay çok hızlı, listeyi boğar
+    const TIGHT_ORB = 1.0;
+    
+    // Her (transit gezegen, natal gezegen, açı) üçlüsü için en kesin günü tut
+    const events = {};
+    for (let day = 0; day < 30; day++) {
+        const jd = jdNow + day;
+        for (const tKey of TRANSIT_PLANETS) {
+            const tLon = geoLongitude(tKey, jd);
+            for (const nKey of Object.keys(c.positions)) {
+                let diff = Math.abs(tLon - c.positions[nKey].lon);
+                if (diff > 180) diff = 360 - diff;
+                for (const asp of ASPECT_TYPES) {
+                    const orb = Math.abs(diff - asp.angle);
+                    if (orb <= TIGHT_ORB) {
+                        const key = `${tKey}-${nKey}-${asp.name}`;
+                        if (!events[key] || orb < events[key].orb) {
+                            events[key] = { day, jd, t: tKey, n: nKey, asp, orb };
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    const list = Object.values(events).sort((a, b) => a.day - b.day || a.orb - b.orb).slice(0, 25);
+    const out = document.getElementById('transits-content');
+    
+    let html = `<div class="daily-date">📅 Önümüzdeki 30 Günün Önemli Transitleri</div>`;
+    
+    if (!list.length) {
+        html += '<div class="r-card"><p>Önümüzdeki 30 gün içinde haritanıza dar açı yapan önemli bir transit yok — sakin bir dönem. 🌤️</p></div>';
+        out.innerHTML = html;
+        return;
+    }
+    
+    let currentDay = -1;
+    let inCard = false;
+    list.forEach(ev => {
+        if (ev.day !== currentDay) {
+            if (inCard) html += '</div>';
+            currentDay = ev.day;
+            const d = jdToDate(ev.jd);
+            const label = ev.day === 0 ? 'Bugün' : ev.day === 1 ? 'Yarın' : fmtTrDate(d);
+            html += `<div class="r-card transit-day"><h4>🗓️ ${label}${ev.day > 1 ? '' : ' — ' + d.toLocaleDateString('tr-TR')}</h4>`;
+            inCard = true;
+        }
+        const natalHouse = c.positions[ev.n].house;
+        const hard = (ev.asp.name === 'Kare' || ev.asp.name === 'Karşıtlık');
+        html += `<p><span class="t-badge ${hard ? 'hard' : 'soft'}">${ev.asp.symbol}</span> <strong style="color:${PLANETS[ev.t].color}">${PLANETS[ev.t].symbol} ${PLANETS[ev.t].name}</strong> natal <strong style="color:${PLANETS[ev.n].color}">${PLANETS[ev.n].symbol} ${PLANETS[ev.n].name}</strong>'e ${ev.asp.name.toLowerCase()} yapıyor — ${PLANET_ROLES[ev.n]} (${natalHouse}. ev) ${TRANSIT_ASPECT_TEXT[ev.asp.name]}.</p>`;
+    });
+    if (inCard) html += '</div>';
+    
+    html += '<div class="r-card blue"><p>ℹ️ Yalnızca 1° orb içindeki (en kesin) transitler listelenir; her açı en yoğun olduğu günde gösterilir. Hızlı hareket eden Ay transitleri "🌙 Günlük Fal" sekmesindedir.</p></div>';
+    
+    out.innerHTML = html;
+}
+
+// ============================================================
+// PAYLAŞIM & PNG & HAFIZA
+// ============================================================
+function buildShareUrl() {
+    const d = document.getElementById('birth-date').value;
+    const t = document.getElementById('birth-time').value;
+    const city = document.getElementById('city').value;
+    const h = document.getElementById('house-system').value;
+    return location.origin + location.pathname + `?d=${d}&t=${encodeURIComponent(t)}&c=${city}&h=${h}`;
+}
+
+function downloadPNG() {
+    const canvas = document.getElementById('wheel');
+    const a = document.createElement('a');
+    const d = document.getElementById('birth-date').value || 'harita';
+    a.download = `dogum-haritasi-${d}.png`;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+async function copyShareLink(btn) {
+    const url = buildShareUrl();
+    const original = btn.textContent;
+    try {
+        await navigator.clipboard.writeText(url);
+        btn.textContent = '✅ Kopyalandı!';
+    } catch (e) {
+        // Clipboard API yoksa eski yöntem
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        btn.textContent = '✅ Kopyalandı!';
+    }
+    setTimeout(() => { btn.textContent = original; }, 2000);
+}
+
+// URL parametreleri veya localStorage'dan doğum bilgisini yükle
+function restoreBirthData() {
+    const qp = new URLSearchParams(location.search);
+    let d = null, t = null, cityVal = null, h = null;
+    
+    if (qp.has('d')) {
+        d = qp.get('d');
+        t = qp.get('t');
+        cityVal = qp.get('c');
+        h = qp.get('h');
+        console.log('🔗 Paylaşım linkinden bilgiler yüklendi');
+    } else {
+        try {
+            const saved = JSON.parse(localStorage.getItem('astro_birth') || 'null');
+            if (saved) {
+                d = saved.d; t = saved.t; cityVal = saved.c; h = saved.h;
+                console.log('💾 Kayıtlı doğum bilgileri yüklendi');
+            }
+        } catch (e) { /* yok say */ }
+    }
+    
+    if (d) document.getElementById('birth-date').value = d;
+    if (t) document.getElementById('birth-time').value = t;
+    if (cityVal) {
+        const sel = document.getElementById('city');
+        if ([...sel.options].some(o => o.value === cityVal)) sel.value = cityVal;
+    }
+    if (h) {
+        const hs = document.getElementById('house-system');
+        if ([...hs.options].some(o => o.value === h)) hs.value = h;
+    }
 }
 
 // ============================================================
@@ -1155,10 +1554,18 @@ function generateAll() {
     fillDominants(c);
     fillInterpretation(c);
     fillDaily(c);
+    fillTransitCalendar(c);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ DOM hazır');
+    
+    // Paylaşım linki / kayıtlı bilgiler
+    restoreBirthData();
+    
+    // Partner şehir listesini ana listeden kopyala
+    const pCity = document.getElementById('p-city');
+    pCity.innerHTML = document.getElementById('city').innerHTML;
     
     // Sekmeler
     document.querySelectorAll('.tab').forEach(tab => {
@@ -1186,9 +1593,23 @@ document.addEventListener('DOMContentLoaded', () => {
         generateAll();
     });
     
+    // Sinastri
+    document.getElementById('syn-btn').addEventListener('click', computeSynastry);
+    
+    // PNG indir & paylaşım linki
+    document.getElementById('btn-png').addEventListener('click', downloadPNG);
+    document.getElementById('btn-share').addEventListener('click', (e) => copyShareLink(e.currentTarget));
+    
     // Chatbot
     initChat();
     
     // İlk yükleme
     generateAll();
+    
+    // PWA: Service Worker kaydı
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('📱 PWA hazır — Service Worker kaydedildi'))
+            .catch(err => console.warn('SW kaydı başarısız:', err));
+    }
 });

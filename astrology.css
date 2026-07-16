@@ -505,8 +505,171 @@ body {
     cursor: pointer;
 }
 
+/* ============ HARİTA AKSİYONLARI (PNG / Paylaş) ============ */
+.chart-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 10px 20px;
+    background: #f3f1fc;
+    border: 1.5px solid #d9d2f5;
+    border-radius: 12px;
+    color: #4a2580;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+}
+
+.action-btn:hover {
+    background: linear-gradient(135deg, #7a5af5, #4a2580);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(122, 90, 245, 0.4);
+}
+
+/* ============ SİNASTRİ ============ */
+.syn-form {
+    background: linear-gradient(135deg, #fff5f8, #fdeef4);
+    border: 1px solid #f7d4e2;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+}
+
+.syn-form h4 {
+    color: #b03060;
+    font-size: 15px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.syn-note {
+    color: #997;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.syn-form label {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.syn-form input,
+.syn-form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #eeced9;
+    border-radius: 10px;
+    font-size: 13px;
+    background: white;
+    font-family: inherit;
+}
+
+.syn-form input:focus,
+.syn-form select:focus {
+    outline: none;
+    border-color: #e0507a;
+    box-shadow: 0 0 0 3px rgba(224, 80, 122, 0.12);
+}
+
+.syn-form .calc-btn {
+    background: linear-gradient(135deg, #e0507a, #b03060);
+    box-shadow: 0 6px 18px rgba(224, 80, 122, 0.35);
+}
+
+.syn-score-card {
+    text-align: center;
+    background: linear-gradient(135deg, #fff5f8, #f8eefd);
+    border: 1px solid #f0d8ec;
+    border-radius: 16px;
+    padding: 24px 18px;
+    margin-bottom: 16px;
+}
+
+.syn-big {
+    font-size: 52px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #e0507a, #7a5af5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+}
+
+.syn-verdict {
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 8px 0;
+}
+
+.syn-pair-line {
+    color: #8a7aa5;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+/* ============ AY FAZI ============ */
+.moon-phase-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: linear-gradient(135deg, #1a1f4d, #2b1e5e);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    color: #e8e6ff;
+}
+
+.mp-emoji { font-size: 52px; line-height: 1; }
+
+.moon-phase-card h4 {
+    color: #ffd76e;
+    font-size: 15px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.moon-phase-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cfd0ee;
+    margin-bottom: 4px;
+}
+
+.mp-next { font-size: 12px !important; color: #a9b1d6 !important; }
+.mp-next strong { color: #ffd76e; }
+
+/* ============ TRANSİT TAKVİMİ ============ */
+.t-badge {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 13px;
+    margin-right: 4px;
+    font-weight: bold;
+}
+
+.t-badge.soft { background: #e2f2e5; color: #2c7a3d; }
+.t-badge.hard { background: #fde3e3; color: #b33; }
+
 /* Responsive */
 @media (max-width: 840px) {
     .page { margin: 0; border-radius: 0; }
     .tab { padding: 7px 11px; font-size: 12px; }
+    .syn-big { font-size: 42px; }
+    .moon-phase-card { flex-direction: column; text-align: center; gap: 8px; }
 }

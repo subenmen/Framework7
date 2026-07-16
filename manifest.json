@@ -1,0 +1,32 @@
+{
+    "name": "KUBEY Astroloji - Doğum Haritası",
+    "short_name": "Astro Harita",
+    "description": "Doğum haritası, sinastri, transit takvimi, günlük fal ve astro chat",
+    "start_url": "./astrology.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "theme_color": "#2b1e5e",
+    "background_color": "#0f1233",
+    "lang": "tr",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

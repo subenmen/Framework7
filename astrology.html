@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Astro Harita - Doğum Haritası, Yorum & Günlük Fal</title>
+    <meta name="theme-color" content="#2b1e5e">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.0.1">
+    <link rel="stylesheet" href="astrology.css?v=5.1.0">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -16,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.0.1</span>
+            <span class="badge">v5.1.0</span>
         </div>
     </div>
 
@@ -84,6 +90,8 @@
             <button class="tab active" data-tab="chart">🌀 Chart</button>
             <button class="tab" data-tab="yorum">🔮 Yorum</button>
             <button class="tab" data-tab="daily">🌙 Günlük Fal</button>
+            <button class="tab" data-tab="synastry">❤️ Sinastri</button>
+            <button class="tab" data-tab="transits">📅 Transitler</button>
             <button class="tab" data-tab="aspects">⭐ Aspects</button>
             <button class="tab" data-tab="positions">🪐 Positions</button>
             <button class="tab" data-tab="houses">🏠 Houses</button>
@@ -95,6 +103,10 @@
             <div class="chart-holder">
                 <canvas id="wheel" width="740" height="740"></canvas>
             </div>
+            <div class="chart-actions">
+                <button id="btn-png" class="action-btn">📷 PNG İndir</button>
+                <button id="btn-share" class="action-btn">🔗 Paylaşım Linki Kopyala</button>
+            </div>
         </div>
 
         <div class="tab-content" id="tab-yorum">
@@ -103,6 +115,33 @@
 
         <div class="tab-content" id="tab-daily">
             <div id="daily-content" class="reading"></div>
+        </div>
+
+        <div class="tab-content" id="tab-synastry">
+            <div class="syn-form">
+                <h4>❤️ Partner Doğum Bilgileri</h4>
+                <p class="syn-note">Sizin haritanız yukarıdaki bilgilerden alınır; partnerinizin bilgilerini girin ve uyumu hesaplayın.</p>
+                <div class="form-grid">
+                    <div>
+                        <label>Doğum Tarihi</label>
+                        <input type="date" id="p-date" value="1995-03-24">
+                    </div>
+                    <div>
+                        <label>Doğum Saati</label>
+                        <input type="time" id="p-time" value="07:30">
+                    </div>
+                    <div>
+                        <label>Şehir</label>
+                        <select id="p-city"></select>
+                    </div>
+                </div>
+                <button id="syn-btn" class="calc-btn">💞 Uyumu Hesapla</button>
+            </div>
+            <div id="synastry-content" class="reading"></div>
+        </div>
+
+        <div class="tab-content" id="tab-transits">
+            <div id="transits-content" class="reading"></div>
         </div>
 
         <div class="tab-content" id="tab-aspects">
@@ -130,7 +169,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.0.1</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.1.0</div>
     </div>
 
     <!-- Chatbot -->
@@ -156,6 +195,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.0.1"></script>
+    <script src="astrology.js?v=5.1.0"></script>
 </body>
 </html>
