@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.4.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.4.0 yükleniyor...');
+// KUBEY Astroloji v5.5.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.5.0 yükleniyor...');
 
-const APP_VERSION = '5.4.0';
+const APP_VERSION = '5.5.0';
 
 const DEG = Math.PI / 180;
 
@@ -489,7 +489,12 @@ function pointAt(deg, r, cx, cy, asc) {
 
 function drawWheel(c) {
     const canvas = document.getElementById('wheel');
+    // Yüksek çözünürlüklü render: retina ekranlarda ve büyük monitörlerde net çizim
+    const scale = Math.max((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 2);
+    canvas.width = 740 * scale;
+    canvas.height = 740 * scale;
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     const cx = 370, cy = 370;
     const asc = c.asc;
     
