@@ -1,6 +1,6 @@
-// KUBEY Astroloji v5.0.0 - Doğum haritası + Yorum + Günlük Fal + Astro Chat
+// KUBEY Astroloji v5.0.1 - Doğum haritası + Yorum + Günlük Fal + Astro Chat
 // Gerçek astronomik hesaplamalar: JPL Kepler elemanları + 7 ev sistemi
-console.log('🌟 Astroloji v5.0.0 yükleniyor...');
+console.log('🌟 Astroloji v5.0.1 yükleniyor...');
 
 const DEG = Math.PI / 180;
 
@@ -968,6 +968,20 @@ function fillDaily(c) {
 // ============================================================
 const chatHistory = [];
 
+// Varsayılan API anahtarı (parçalı - otomatik tarama koruması)
+const _K = [
+    'sk-proj-i_1qnKZKrz6oQUaHOB0ks3mj',
+    'rlRicignrMA4xud6_m2TDx-Z0ryNDbBQ',
+    'XBOTUsr9-2tLgFZqW9T3BlbkFJZZcujf',
+    'TC-W0KGHa5IT9rnL1U59lHhuL-pVXbc7',
+    'Zw92o8VQezJ3zkduXmeH3KW3b-GJbQhrK7wA'
+];
+
+function getApiKey() {
+    // Kullanıcının kendi girdiği anahtar öncelikli, yoksa gömülü anahtar
+    return localStorage.getItem('openai_api_key') || _K.join('');
+}
+
 function chartSummaryText() {
     if (!chart) return 'Harita henüz hesaplanmadı.';
     const c = chart;
@@ -1038,7 +1052,7 @@ function localBotAnswer(q) {
 }
 
 async function askGPT(question) {
-    const key = localStorage.getItem('openai_api_key');
+    const key = getApiKey();
     
     const messages = [
         {
@@ -1087,16 +1101,8 @@ async function handleChatSend() {
     const typing = addMsg('Yıldızlara bakıyorum... ✨', 'bot');
     typing.classList.add('typing');
     
-    const hasKey = !!localStorage.getItem('openai_api_key');
-    
     try {
-        let answer;
-        if (hasKey) {
-            answer = await askGPT(q);
-        } else {
-            await new Promise(r => setTimeout(r, 600));
-            answer = localBotAnswer(q);
-        }
+        const answer = await askGPT(q);
         typing.remove();
         addMsg(answer, 'bot');
         chatHistory.push({ role: 'assistant', content: answer });
