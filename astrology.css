@@ -208,6 +208,85 @@ body {
     box-shadow: 0 10px 24px rgba(122, 90, 245, 0.5);
 }
 
+/* Kişi profilleri çubuğu */
+.profile-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 22px;
+    background: #fbfaff;
+    border-bottom: 1px solid #eee;
+}
+
+.profile-bar:empty { display: none; }
+
+.profile-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: white;
+    border: 1.5px solid #d9d2f5;
+    border-radius: 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #5a4a95;
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+}
+
+.profile-chip:hover { background: #f3f1fc; }
+
+.profile-chip.active {
+    background: linear-gradient(135deg, #7a5af5, #4a2580);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(122, 90, 245, 0.35);
+}
+
+.profile-chip .chip-x {
+    font-size: 10px;
+    opacity: .55;
+    padding: 2px 4px;
+    border-radius: 50%;
+}
+
+.profile-chip .chip-x:hover { opacity: 1; background: rgba(255,255,255,0.25); }
+
+.profile-chip.add {
+    background: #f0fdf4;
+    border-color: #bbe5c8;
+    color: #2c7a3d;
+    border-style: dashed;
+}
+
+.profile-chip.add:hover { background: #e2f7e9; }
+
+/* Karşılaştırma */
+.compare-form {
+    background: linear-gradient(135deg, #f4f7ff, #eef2fd);
+    border-color: #d5dcf5;
+}
+
+.compare-form h4 { color: #3a56b0; }
+.compare-form .calc-btn { background: linear-gradient(135deg, #4a7bd5, #2c4a9a); box-shadow: 0 6px 18px rgba(74, 123, 213, 0.35); }
+
+.cmp-names {
+    font-size: 17px;
+    font-weight: 600;
+    color: #4a2580;
+    margin-bottom: 6px;
+}
+
+.cmp-table { margin-top: 6px; }
+.cmp-table td small { color: #888; }
+
+@media (min-width: 1024px) {
+    .compare-single { column-count: 1 !important; }
+    .compare-single .cmp-table { max-width: none; }
+}
+
 /* Bilgi tablosu */
 .info-table {
     width: 100%;

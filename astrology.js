@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.6.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.6.0 yükleniyor...');
+// KUBEY Astroloji v5.7.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.7.0 yükleniyor...');
 
-const APP_VERSION = '5.6.0';
+const APP_VERSION = '5.7.0';
 
 const DEG = Math.PI / 180;
 
@@ -595,6 +595,7 @@ function computeChart() {
     const timeVal = document.getElementById('birth-time').value;
     const hsys = document.getElementById('house-system').value;
     const place = selectedPlace;
+    const name = (document.getElementById('person-name').value || '').trim() || ('Kişi ' + (profiles.length + 1));
     
     const tz = utcOffsetHours(dateVal, timeVal, place);
     
@@ -606,15 +607,12 @@ function computeChart() {
         city: placeLabel(place)
     });
     chart.place = place;
+    chart.name = name;
     
-    // Doğum bilgisi hafızası
-    try {
-        localStorage.setItem('astro_birth', JSON.stringify({
-            d: dateVal, t: timeVal, h: hsys, place: place
-        }));
-    } catch (e) { /* localStorage kapalı olabilir */ }
+    // Profil olarak kaydet (çoklu kişi hafızası)
+    persistCurrentAsProfile(name, dateVal, timeVal, place);
     
-    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(chart.asc), '| MC:', fmtZodiac(chart.mc), '| UTC' + fmtTz(tz));
+    console.log('✅ Hesaplandı —', name, '| Yükselen:', fmtZodiac(chart.asc), '| MC:', fmtZodiac(chart.mc), '| UTC' + fmtTz(tz));
     return chart;
 }
 
@@ -1994,6 +1992,279 @@ async function copyShareLink(btn) {
     setTimeout(() => { btn.textContent = original; }, 2000);
 }
 
+// ============================================================
+// KİŞİ PROFİLLERİ (çoklu kayıt + karşılaştırma)
+// ============================================================
+let profiles = [];
+let activeProfileId = null;
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function loadProfiles() {
+    try {
+        const raw = JSON.parse(localStorage.getItem('astro_profiles') || '[]');
+        if (Array.isArray(raw)) {
+            profiles = raw.filter(p => p && p.d && p.t && p.place && typeof p.place.lat === 'number');
+        }
+    } catch (e) { profiles = []; }
+}
+
+function saveProfiles() {
+    try { localStorage.setItem('astro_profiles', JSON.stringify(profiles)); } catch (e) { /* dolu olabilir */ }
+}
+
+function applyProfileToForm(p) {
+    document.getElementById('person-name').value = p.name || '';
+    document.getElementById('birth-date').value = p.d;
+    document.getElementById('birth-time').value = p.t;
+    selectedPlace = p.place;
+    document.getElementById('city-input').value = placeLabel(p.place);
+}
+
+function activateProfile(id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    activeProfileId = id;
+    applyProfileToForm(p);
+    generateAll();
+    renderProfileBar();
+}
+
+function deleteProfile(id) {
+    profiles = profiles.filter(x => x.id !== id);
+    saveProfiles();
+    if (activeProfileId === id) {
+        activeProfileId = null;
+        if (profiles.length) { activateProfile(profiles[0].id); return; }
+    }
+    renderProfileBar();
+    fillCompareSelects();
+}
+
+function newProfileDraft() {
+    activeProfileId = null;
+    document.getElementById('person-name').value = '';
+    document.getElementById('birth-form').style.display = 'block';
+    document.getElementById('person-name').focus();
+    renderProfileBar();
+}
+
+function renderProfileBar() {
+    const bar = document.getElementById('profile-bar');
+    if (!bar) return;
+    let html = '';
+    profiles.forEach(p => {
+        html += `<span class="profile-chip${p.id === activeProfileId ? ' active' : ''}" data-id="${p.id}" title="${escapeHtml(p.d + ' ' + p.t + ' · ' + placeLabel(p.place))}">
+            👤 ${escapeHtml(p.name)}<span class="chip-x" data-del="${p.id}" title="Sil">✕</span></span>`;
+    });
+    html += '<span class="profile-chip add" id="chip-add">➕ Yeni Kişi</span>';
+    bar.innerHTML = html;
+    
+    bar.querySelectorAll('.profile-chip[data-id]').forEach(el => {
+        el.addEventListener('click', (e) => {
+            if (e.target.dataset.del) return;
+            activateProfile(el.dataset.id);
+        });
+    });
+    bar.querySelectorAll('.chip-x').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const p = profiles.find(x => x.id === el.dataset.del);
+            if (p && confirm(`"${p.name}" profili silinsin mi?`)) deleteProfile(el.dataset.del);
+        });
+    });
+    const add = document.getElementById('chip-add');
+    if (add) add.addEventListener('click', newProfileDraft);
+}
+
+// Hesaplanan haritayı aktif profile kaydet (yoksa oluştur, benzeri varsa güncelle)
+function persistCurrentAsProfile(name, d, t, place) {
+    let p = activeProfileId ? profiles.find(x => x.id === activeProfileId) : null;
+    if (!p) {
+        p = profiles.find(x => x.d === d && x.t === t &&
+            Math.abs(x.place.lat - place.lat) < 0.001 && Math.abs(x.place.lon - place.lon) < 0.001);
+    }
+    if (p) {
+        Object.assign(p, { name, d, t, place });
+        activeProfileId = p.id;
+    } else {
+        p = { id: String(Date.now()), name, d, t, place };
+        profiles.push(p);
+        activeProfileId = p.id;
+    }
+    saveProfiles();
+    renderProfileBar();
+    fillCompareSelects();
+}
+
+function fillCompareSelects() {
+    const selA = document.getElementById('cmp-a');
+    const selB = document.getElementById('cmp-b');
+    if (!selA || !selB) return;
+    const opts = profiles.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.d})</option>`).join('');
+    const prevA = selA.value, prevB = selB.value;
+    selA.innerHTML = opts;
+    selB.innerHTML = opts;
+    if (profiles.length >= 2) {
+        selA.value = profiles.some(p => p.id === prevA) ? prevA : profiles[0].id;
+        selB.value = (profiles.some(p => p.id === prevB) && prevB !== selA.value) ? prevB : profiles[1].id;
+        if (selB.value === selA.value) selB.value = profiles.find(p => p.id !== selA.value).id;
+    }
+}
+
+function chartForProfile(p) {
+    const hsys = document.getElementById('house-system').value;
+    return calcChartData({
+        dateVal: p.d, timeVal: p.t,
+        lat: p.place.lat, lon: p.place.lon,
+        tz: utcOffsetHours(p.d, p.t, p.place),
+        hsys, city: placeLabel(p.place)
+    });
+}
+
+function elementCounts(c) {
+    const el = { fire: 0, earth: 0, air: 0, water: 0 };
+    for (const key of Object.keys(c.positions)) el[SIGNS[Math.floor(c.positions[key].lon / 30)].element]++;
+    return el;
+}
+
+function qualityCounts(c) {
+    const q = [0, 0, 0];
+    for (const key of Object.keys(c.positions)) q[Math.floor(c.positions[key].lon / 30) % 3]++;
+    return q;
+}
+
+function runComparison() {
+    const out = document.getElementById('compare-content');
+    if (profiles.length < 2) {
+        out.innerHTML = '<div class="r-card red"><p>Karşılaştırma için en az 2 kayıtlı kişi gerekli. "✏️ Bilgileri düzenle" formundan "➕ Yeni Kişi" ile ekleyebilirsiniz.</p></div>';
+        return;
+    }
+    const pA = profiles.find(x => x.id === document.getElementById('cmp-a').value);
+    const pB = profiles.find(x => x.id === document.getElementById('cmp-b').value);
+    if (!pA || !pB) return;
+    if (pA.id === pB.id) {
+        out.innerHTML = '<div class="r-card red"><p>Lütfen iki farklı kişi seçin.</p></div>';
+        return;
+    }
+    
+    const cA = chartForProfile(pA);
+    const cB = chartForProfile(pB);
+    const nA = escapeHtml(pA.name), nB = escapeHtml(pB.name);
+    
+    // Uyum skorları
+    const synAspects = calcSynastryAspects(cA, cB);
+    const overall = synScore(synAspects, null);
+    const love = synScore(synAspects, new Set(['venus', 'mars', 'moon']));
+    const comm = synScore(synAspects, new Set(['mercury', 'moon', 'sun']));
+    const longTerm = synScore(synAspects, new Set(['saturn', 'jupiter', 'sun', 'asc']));
+    
+    const verdict = overall >= 80 ? 'Çok güçlü bir kozmik bağ! 💫'
+        : overall >= 65 ? 'Güzel bir uyum — destekleyici enerjiler baskın. 🌟'
+        : overall >= 50 ? 'Dengeli: hem uyum hem büyüten zorluklar var. ⚖️'
+        : overall >= 35 ? 'Emek isteyen ama öğreten bir bağ. 🔧'
+        : 'Zorlu bir kombinasyon — bilinçli çaba şart. 🌋';
+    
+    let html = `<div class="syn-score-card">
+        <div class="cmp-names">👤 ${nA} &nbsp;🆚&nbsp; 👤 ${nB}</div>
+        <div class="syn-big">${overall}%</div>
+        <p class="syn-verdict">${verdict}</p>
+    </div>`;
+    
+    html += '<div class="r-card"><h4>💞 Uyum Skorları</h4>';
+    [['❤️ Aşk & Çekim', love, '#e0507a'], ['💬 İletişim', comm, '#3a7bd5'], ['🏛️ Uzun Vade', longTerm, '#7a5af5']].forEach(([label, val, color]) => {
+        html += `<div class="dom-bar">
+            <span class="dom-label" style="width:130px">${label}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${val}%;background:${color}"></div></div>
+            <span><strong>${val}%</strong></span>
+        </div>`;
+    });
+    html += '</div>';
+    
+    // Genel karşılaştırma tablosu
+    const bigRow = (label, a, b) => `<tr><td><strong>${label}</strong></td><td>${a}</td><td>${b}</td></tr>`;
+    const domEl = (c) => {
+        const el = elementCounts(c);
+        const names = { fire: '🔥 Ateş', earth: '🌍 Toprak', air: '💨 Hava', water: '💧 Su' };
+        return names[Object.keys(el).sort((x, y) => el[y] - el[x])[0]];
+    };
+    const domQ = (c) => QUALITIES[qualityCounts(c).indexOf(Math.max(...qualityCounts(c)))];
+    
+    html += `<div class="r-card gold"><h4>📋 Genel Karşılaştırma</h4>
+    <table class="data-table cmp-table">
+        <thead><tr><th></th><th>👤 ${nA}</th><th>👤 ${nB}</th></tr></thead>
+        <tbody>
+        ${bigRow('Doğum', `${pA.d} ${pA.t}<br><small>${escapeHtml(placeLabel(pA.place))}</small>`, `${pB.d} ${pB.t}<br><small>${escapeHtml(placeLabel(pB.place))}</small>`)}
+        ${bigRow('☉ Güneş', fmtZodiac(cA.positions.sun.lon) + ` (${cA.positions.sun.house}. ev)`, fmtZodiac(cB.positions.sun.lon) + ` (${cB.positions.sun.house}. ev)`)}
+        ${bigRow('☽ Ay', fmtZodiac(cA.positions.moon.lon) + ` (${cA.positions.moon.house}. ev)`, fmtZodiac(cB.positions.moon.lon) + ` (${cB.positions.moon.house}. ev)`)}
+        ${bigRow('⬆️ Yükselen', fmtZodiac(cA.asc), fmtZodiac(cB.asc))}
+        ${bigRow('MC', fmtZodiac(cA.mc), fmtZodiac(cB.mc))}
+        ${bigRow('Baskın element', domEl(cA), domEl(cB))}
+        ${bigRow('Baskın nitelik', domQ(cA), domQ(cB))}
+        </tbody>
+    </table></div>`;
+    
+    // Element dağılımı karşılaştırma
+    const elA = elementCounts(cA), elB = elementCounts(cB);
+    const elNames = { fire: '🔥 Ateş', earth: '🌍 Toprak', air: '💨 Hava', water: '💧 Su' };
+    html += '<div class="r-card"><h4>🔥 Element Dağılımları</h4>';
+    for (const el of Object.keys(elNames)) {
+        html += `<div class="dom-bar">
+            <span class="dom-label" style="width:90px">${elNames[el]}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${elA[el] * 10}%;background:${ELEMENT_COLORS[el]}"></div></div>
+            <span style="width:40px;text-align:center"><strong>${elA[el]}</strong> · <strong>${elB[el]}</strong></span>
+            <div class="dom-track"><div class="dom-fill" style="width:${elB[el] * 10}%;background:${ELEMENT_COLORS[el]};opacity:.55"></div></div>
+        </div>`;
+    }
+    html += `<p style="font-size:12px;color:#888">Sol çubuk: ${nA} · Sağ çubuk: ${nB}</p></div>`;
+    
+    // Sinastri açıları
+    const top = [...synAspects].sort((x, y) => (y.weight * Math.abs(y.factor)) - (x.weight * Math.abs(x.factor))).slice(0, 12);
+    if (top.length) {
+        let list = '';
+        top.forEach(x => {
+            const pairKey = [x.a, x.b].sort().join('-');
+            const special = SYN_PAIR_TEXT[pairKey] ? ' ' + SYN_PAIR_TEXT[pairKey] : '';
+            list += `<p><strong style="color:${x.type.color}">${synSymbol(x.a)} ${x.type.symbol} ${synSymbol(x.b)}</strong> ${synName(x.a)} (${nA}) ${x.type.name.toLowerCase()} ${synName(x.b)} (${nB}) — ${SYN_ASPECT_TONE[x.type.name]} (orb ${x.orb.toFixed(1)}°).${special}</p>`;
+        });
+        html += `<div class="r-card gold"><h4>⭐ Aralarındaki Sinastri Açıları</h4>${list}</div>`;
+    }
+    
+    // Gezegen pozisyonları yan yana
+    let posRows = '';
+    posRows += `<tr><td><strong>AC</strong></td><td>${fmtZodiac(cA.asc)}</td><td>${fmtZodiac(cB.asc)}</td></tr>`;
+    for (const key of Object.keys(PLANETS)) {
+        const a = cA.positions[key], b = cB.positions[key];
+        posRows += `<tr>
+            <td><span style="color:${PLANETS[key].color};font-weight:bold">${PLANETS[key].symbol}</span> ${PLANETS[key].name}</td>
+            <td>${fmtZodiac(a.lon)} · ${a.house}. ev${a.retro ? ' ℞' : ''}</td>
+            <td>${fmtZodiac(b.lon)} · ${b.house}. ev${b.retro ? ' ℞' : ''}</td>
+        </tr>`;
+    }
+    html += `<div class="r-card"><h4>🪐 Gezegen Pozisyonları Yan Yana</h4>
+    <table class="data-table cmp-table">
+        <thead><tr><th>Gezegen</th><th>👤 ${nA}</th><th>👤 ${nB}</th></tr></thead>
+        <tbody>${posRows}</tbody>
+    </table></div>`;
+    
+    // Ev başlangıçları yan yana
+    let houseRows = '';
+    for (let i = 0; i < 12; i++) {
+        const special = i === 0 ? ' (AC)' : i === 3 ? ' (IC)' : i === 6 ? ' (DC)' : i === 9 ? ' (MC)' : '';
+        houseRows += `<tr><td><strong>${i + 1}${special}</strong></td><td>${fmtZodiac(cA.houses[i])}</td><td>${fmtZodiac(cB.houses[i])}</td></tr>`;
+    }
+    html += `<div class="r-card blue"><h4>🏠 Ev Başlangıçları Yan Yana (${cA.hsys})</h4>
+    <table class="data-table cmp-table">
+        <thead><tr><th>Ev</th><th>👤 ${nA}</th><th>👤 ${nB}</th></tr></thead>
+        <tbody>${houseRows}</tbody>
+    </table></div>`;
+    
+    out.innerHTML = html;
+    console.log(`🔍 Karşılaştırma: ${pA.name} × ${pB.name} — uyum ${overall}%`);
+}
+
 // URL parametreleri veya localStorage'dan doğum bilgisini yükle
 function restoreBirthData() {
     const qp = new URLSearchParams(location.search);
@@ -2088,7 +2359,7 @@ function buildFullChartContext() {
     const c = chart;
     const L = [];
     
-    L.push(`DOĞUM BİLGİLERİ: ${c.dateVal}, saat ${c.timeVal} (UTC${fmtTz(c.tz)}), ${c.city} (enlem ${c.lat.toFixed(2)}, boylam ${c.lon.toFixed(2)}). Ev sistemi: ${c.hsys}.`);
+    L.push(`KİŞİ: ${c.name || 'Bilinmiyor'}. DOĞUM BİLGİLERİ: ${c.dateVal}, saat ${c.timeVal} (UTC${fmtTz(c.tz)}), ${c.city} (enlem ${c.lat.toFixed(2)}, boylam ${c.lon.toFixed(2)}). Ev sistemi: ${c.hsys}.`);
     L.push(`EKSENLER: Yükselen (AC): ${fmtZodiac(c.asc)} | MC (tepe noktası): ${fmtZodiac(c.mc)} | Alçalan (DC): ${fmtZodiac(norm360(c.asc + 180))} | IC: ${fmtZodiac(norm360(c.mc + 180))}.`);
     
     L.push('GEZEGEN KONUMLARI: ' + Object.keys(c.positions).map(k => {
@@ -2367,7 +2638,19 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ DOM hazır');
     
     // Paylaşım linki / kayıtlı bilgiler
-    restoreBirthData();
+    // Profilleri yükle; URL paylaşım linki varsa o öncelikli, yoksa ilk profil
+    loadProfiles();
+    if (new URLSearchParams(location.search).has('d') || !profiles.length) {
+        restoreBirthData();
+    } else {
+        activeProfileId = profiles[0].id;
+        applyProfileToForm(profiles[0]);
+    }
+    renderProfileBar();
+    fillCompareSelects();
+    
+    // Karşılaştırma butonu
+    document.getElementById('cmp-btn').addEventListener('click', runComparison);
     
     // Dünya şehir arama kutuları (kendi + partner)
     initCitySearch('city-input', 'city-results', (p) => { selectedPlace = p; });

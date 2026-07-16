@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.6.0">
+    <link rel="stylesheet" href="astrology.css?v=5.7.0">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -22,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.6.0</span>
+            <span class="badge">v5.7.0</span>
         </div>
     </div>
 
@@ -44,9 +44,16 @@
             </span>
         </div>
 
+        <!-- Kayıtlı Kişiler -->
+        <div class="profile-bar" id="profile-bar"></div>
+
         <!-- Doğum Bilgileri Formu -->
         <div class="birth-form" id="birth-form" style="display:none;">
             <div class="form-grid">
+                <div>
+                    <label>İsim</label>
+                    <input type="text" id="person-name" placeholder="örn. Ali" autocomplete="off">
+                </div>
                 <div>
                     <label>Doğum Tarihi</label>
                     <input type="date" id="birth-date" value="1993-01-31">
@@ -81,6 +88,7 @@
             <button class="tab" data-tab="yorum">🔮 Yorum</button>
             <button class="tab" data-tab="daily">🌙 Fal</button>
             <button class="tab" data-tab="synastry">❤️ Sinastri</button>
+            <button class="tab" data-tab="compare">🔍 Karşılaştır</button>
             <button class="tab" data-tab="transits">📅 Transitler</button>
             <button class="tab" data-tab="aspects">⭐ Aspects</button>
             <button class="tab" data-tab="positions">🪐 Positions</button>
@@ -140,6 +148,25 @@
             <div id="synastry-content" class="reading"></div>
         </div>
 
+        <div class="tab-content" id="tab-compare">
+            <div class="syn-form compare-form">
+                <h4>🔍 Kayıtlı Kişileri Karşılaştır</h4>
+                <p class="syn-note">"✏️ Bilgileri düzenle" ile birden fazla kişi kaydedin, sonra burada ikisini seçip haritalarını ve tüm verilerini karşılaştırın.</p>
+                <div class="form-grid">
+                    <div>
+                        <label>1. Kişi</label>
+                        <select id="cmp-a"></select>
+                    </div>
+                    <div>
+                        <label>2. Kişi</label>
+                        <select id="cmp-b"></select>
+                    </div>
+                </div>
+                <button id="cmp-btn" class="calc-btn">🔍 Karşılaştır</button>
+            </div>
+            <div id="compare-content" class="reading compare-single"></div>
+        </div>
+
         <div class="tab-content" id="tab-transits">
             <div id="transits-content" class="reading"></div>
         </div>
@@ -169,7 +196,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.6.0</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.7.0</div>
     </div>
 
     <!-- Chatbot -->
@@ -195,6 +222,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.6.0"></script>
+    <script src="astrology.js?v=5.7.0"></script>
 </body>
 </html>
