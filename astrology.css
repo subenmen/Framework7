@@ -156,6 +156,39 @@ body {
     box-shadow: 0 0 0 3px rgba(122, 90, 245, 0.12);
 }
 
+/* Dünya şehir arama */
+.city-search { position: relative; }
+
+.city-results {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1.5px solid #d9d2f5;
+    border-radius: 12px;
+    margin-top: 4px;
+    box-shadow: 0 14px 40px rgba(42, 20, 90, 0.18);
+    z-index: 60;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.city-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #f4f1fd;
+    color: #333;
+}
+
+.city-item:last-child { border-bottom: none; }
+.city-item:hover { background: #f3f1fc; }
+.city-item.muted { color: #999; cursor: default; }
+.city-item.muted:hover { background: white; }
+.city-item .ci-country { color: #8a7aa5; font-size: 12px; margin-left: 4px; }
+
 .calc-btn {
     background: linear-gradient(135deg, #7a5af5, #4a2580);
     color: white;

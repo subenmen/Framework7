@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.5.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.5.0 yükleniyor...');
+// KUBEY Astroloji v5.6.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.6.0 yükleniyor...');
 
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.6.0';
 
 const DEG = Math.PI / 180;
 
@@ -364,7 +364,173 @@ function calcAspects(positions) {
     return found;
 }
 
-// ---------- ZAMAN DİLİMİ (Türkiye, tarihe göre yaz saati) ----------
+// ============================================================
+// DÜNYA ŞEHİR ARAMA & YER YÖNETİMİ
+// ============================================================
+const DEFAULT_PLACE = { name: 'Ankara', country: 'Türkiye', cc: 'TR', admin: '', lat: 39.9334, lon: 32.8597, tz: 'Europe/Istanbul' };
+let selectedPlace = { ...DEFAULT_PLACE };
+let partnerPlace = { ...DEFAULT_PLACE };
+
+// Çevrimdışı / API erişilemezse kullanılacak yerleşik liste
+const CITY_FALLBACK = [
+    { name: 'Ankara', country: 'Türkiye', cc: 'TR', admin: '', lat: 39.9334, lon: 32.8597, tz: 'Europe/Istanbul' },
+    { name: 'İstanbul', country: 'Türkiye', cc: 'TR', admin: '', lat: 41.0082, lon: 28.9784, tz: 'Europe/Istanbul' },
+    { name: 'İzmir', country: 'Türkiye', cc: 'TR', admin: '', lat: 38.4237, lon: 27.1428, tz: 'Europe/Istanbul' },
+    { name: 'Antalya', country: 'Türkiye', cc: 'TR', admin: '', lat: 36.8969, lon: 30.7133, tz: 'Europe/Istanbul' },
+    { name: 'Bursa', country: 'Türkiye', cc: 'TR', admin: '', lat: 40.1885, lon: 29.0610, tz: 'Europe/Istanbul' },
+    { name: 'Adana', country: 'Türkiye', cc: 'TR', admin: '', lat: 37.0000, lon: 35.3213, tz: 'Europe/Istanbul' },
+    { name: 'Konya', country: 'Türkiye', cc: 'TR', admin: '', lat: 37.8746, lon: 32.4932, tz: 'Europe/Istanbul' },
+    { name: 'Gaziantep', country: 'Türkiye', cc: 'TR', admin: '', lat: 37.0662, lon: 37.3833, tz: 'Europe/Istanbul' },
+    { name: 'Trabzon', country: 'Türkiye', cc: 'TR', admin: '', lat: 41.0027, lon: 39.7168, tz: 'Europe/Istanbul' },
+    { name: 'Diyarbakır', country: 'Türkiye', cc: 'TR', admin: '', lat: 37.9144, lon: 40.2306, tz: 'Europe/Istanbul' },
+    { name: 'Van', country: 'Türkiye', cc: 'TR', admin: '', lat: 38.4891, lon: 43.4089, tz: 'Europe/Istanbul' },
+    { name: 'Samsun', country: 'Türkiye', cc: 'TR', admin: '', lat: 41.2867, lon: 36.3300, tz: 'Europe/Istanbul' },
+    { name: 'Eskişehir', country: 'Türkiye', cc: 'TR', admin: '', lat: 39.7767, lon: 30.5206, tz: 'Europe/Istanbul' },
+    { name: 'Kayseri', country: 'Türkiye', cc: 'TR', admin: '', lat: 38.7312, lon: 35.4787, tz: 'Europe/Istanbul' },
+    { name: 'Londra', country: 'Birleşik Krallık', cc: 'GB', admin: '', lat: 51.5074, lon: -0.1278, tz: 'Europe/London' },
+    { name: 'Berlin', country: 'Almanya', cc: 'DE', admin: '', lat: 52.5200, lon: 13.4050, tz: 'Europe/Berlin' },
+    { name: 'Paris', country: 'Fransa', cc: 'FR', admin: '', lat: 48.8566, lon: 2.3522, tz: 'Europe/Paris' },
+    { name: 'Amsterdam', country: 'Hollanda', cc: 'NL', admin: '', lat: 52.3676, lon: 4.9041, tz: 'Europe/Amsterdam' },
+    { name: 'Roma', country: 'İtalya', cc: 'IT', admin: '', lat: 41.9028, lon: 12.4964, tz: 'Europe/Rome' },
+    { name: 'Madrid', country: 'İspanya', cc: 'ES', admin: '', lat: 40.4168, lon: -3.7038, tz: 'Europe/Madrid' },
+    { name: 'Viyana', country: 'Avusturya', cc: 'AT', admin: '', lat: 48.2082, lon: 16.3738, tz: 'Europe/Vienna' },
+    { name: 'Atina', country: 'Yunanistan', cc: 'GR', admin: '', lat: 37.9838, lon: 23.7275, tz: 'Europe/Athens' },
+    { name: 'Moskova', country: 'Rusya', cc: 'RU', admin: '', lat: 55.7558, lon: 37.6173, tz: 'Europe/Moscow' },
+    { name: 'Kiev', country: 'Ukrayna', cc: 'UA', admin: '', lat: 50.4501, lon: 30.5234, tz: 'Europe/Kiev' },
+    { name: 'Bakü', country: 'Azerbaycan', cc: 'AZ', admin: '', lat: 40.4093, lon: 49.8671, tz: 'Asia/Baku' },
+    { name: 'Tahran', country: 'İran', cc: 'IR', admin: '', lat: 35.6892, lon: 51.3890, tz: 'Asia/Tehran' },
+    { name: 'Dubai', country: 'BAE', cc: 'AE', admin: '', lat: 25.2048, lon: 55.2708, tz: 'Asia/Dubai' },
+    { name: 'Riyad', country: 'Suudi Arabistan', cc: 'SA', admin: '', lat: 24.7136, lon: 46.6753, tz: 'Asia/Riyadh' },
+    { name: 'Kahire', country: 'Mısır', cc: 'EG', admin: '', lat: 30.0444, lon: 31.2357, tz: 'Africa/Cairo' },
+    { name: 'New York', country: 'ABD', cc: 'US', admin: '', lat: 40.7128, lon: -74.0060, tz: 'America/New_York' },
+    { name: 'Los Angeles', country: 'ABD', cc: 'US', admin: '', lat: 34.0522, lon: -118.2437, tz: 'America/Los_Angeles' },
+    { name: 'Chicago', country: 'ABD', cc: 'US', admin: '', lat: 41.8781, lon: -87.6298, tz: 'America/Chicago' },
+    { name: 'Toronto', country: 'Kanada', cc: 'CA', admin: '', lat: 43.6532, lon: -79.3832, tz: 'America/Toronto' },
+    { name: 'Mexico City', country: 'Meksika', cc: 'MX', admin: '', lat: 19.4326, lon: -99.1332, tz: 'America/Mexico_City' },
+    { name: 'São Paulo', country: 'Brezilya', cc: 'BR', admin: '', lat: -23.5505, lon: -46.6333, tz: 'America/Sao_Paulo' },
+    { name: 'Buenos Aires', country: 'Arjantin', cc: 'AR', admin: '', lat: -34.6037, lon: -58.3816, tz: 'America/Argentina/Buenos_Aires' },
+    { name: 'Tokyo', country: 'Japonya', cc: 'JP', admin: '', lat: 35.6762, lon: 139.6503, tz: 'Asia/Tokyo' },
+    { name: 'Pekin', country: 'Çin', cc: 'CN', admin: '', lat: 39.9042, lon: 116.4074, tz: 'Asia/Shanghai' },
+    { name: 'Delhi', country: 'Hindistan', cc: 'IN', admin: '', lat: 28.7041, lon: 77.1025, tz: 'Asia/Kolkata' },
+    { name: 'Bangkok', country: 'Tayland', cc: 'TH', admin: '', lat: 13.7563, lon: 100.5018, tz: 'Asia/Bangkok' },
+    { name: 'Sidney', country: 'Avustralya', cc: 'AU', admin: '', lat: -33.8688, lon: 151.2093, tz: 'Australia/Sydney' },
+    { name: 'Melbourne', country: 'Avustralya', cc: 'AU', admin: '', lat: -37.8136, lon: 144.9631, tz: 'Australia/Melbourne' },
+    { name: 'Johannesburg', country: 'Güney Afrika', cc: 'ZA', admin: '', lat: -26.2041, lon: 28.0473, tz: 'Africa/Johannesburg' }
+];
+
+function flagEmoji(cc) {
+    if (!cc || cc.length !== 2) return '🌍';
+    return cc.toUpperCase().split('').map(ch => String.fromCodePoint(0x1F1E6 + ch.charCodeAt(0) - 65)).join('');
+}
+
+function placeLabel(p) {
+    return p.name + (p.country ? ', ' + p.country : '');
+}
+
+// Open-Meteo ücretsiz geocoding (anahtar gerektirmez); hata olursa yerleşik liste
+async function searchCities(q) {
+    try {
+        const res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=8&language=tr&format=json');
+        if (!res.ok) throw new Error('geo api ' + res.status);
+        const data = await res.json();
+        const results = (data.results || []).map(r => ({
+            name: r.name,
+            country: r.country || '',
+            cc: (r.country_code || '').toUpperCase(),
+            admin: r.admin1 || '',
+            lat: r.latitude, lon: r.longitude,
+            tz: r.timezone || null
+        }));
+        if (results.length) return results;
+        throw new Error('sonuç yok');
+    } catch (e) {
+        const ql = q.toLocaleLowerCase('tr');
+        return CITY_FALLBACK.filter(c =>
+            c.name.toLocaleLowerCase('tr').includes(ql) || c.country.toLocaleLowerCase('tr').includes(ql)
+        ).slice(0, 8);
+    }
+}
+
+function initCitySearch(inputId, resultsId, onSelect) {
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(resultsId);
+    let timer = null;
+    
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        const q = input.value.trim();
+        if (q.length < 2) { box.innerHTML = ''; box.style.display = 'none'; return; }
+        timer = setTimeout(async () => {
+            box.innerHTML = '<div class="city-item muted">🔍 Aranıyor...</div>';
+            box.style.display = 'block';
+            const places = await searchCities(q);
+            if (!places.length) {
+                box.innerHTML = '<div class="city-item muted">Sonuç bulunamadı — farklı yazım deneyin</div>';
+                return;
+            }
+            box.innerHTML = places.map((p, i) =>
+                `<div class="city-item" data-i="${i}">${flagEmoji(p.cc)} <strong>${p.name}</strong>${p.admin ? ', ' + p.admin : ''} <span class="ci-country">${p.country}</span></div>`
+            ).join('');
+            box.querySelectorAll('.city-item[data-i]').forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const p = places[parseInt(el.dataset.i)];
+                    input.value = placeLabel(p);
+                    box.style.display = 'none';
+                    onSelect(p);
+                });
+            });
+        }, 350);
+    });
+    
+    input.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 200));
+    input.addEventListener('focus', () => { if (box.innerHTML) box.style.display = 'block'; });
+}
+
+// ---------- ZAMAN DİLİMİ ----------
+// IANA dilimine göre, verilen yerel tarih-saat anındaki UTC ofseti (dakika).
+// Intl API tarihsel yaz saati geçişlerini de bilir (ör. Türkiye 2016 öncesi).
+function ianaOffsetMinutes(date, iana) {
+    const f = new Intl.DateTimeFormat('en-US', { timeZone: iana, timeZoneName: 'longOffset' });
+    const part = f.formatToParts(date).find(p => p.type === 'timeZoneName').value; // "GMT+03:00" | "GMT"
+    const m = part.match(/GMT([+-])(\d{2}):(\d{2})/);
+    if (!m) return 0;
+    return (m[1] === '-' ? -1 : 1) * (parseInt(m[2], 10) * 60 + parseInt(m[3], 10));
+}
+
+function tzOffsetFromIana(dateStr, timeStr, iana) {
+    const [Y, Mo, Dy] = dateStr.split('-').map(Number);
+    const [hh, mm] = timeStr.split(':').map(Number);
+    const wallUtc = Date.UTC(Y, Mo - 1, Dy, hh, mm);
+    // Yerel saat = UTC + ofset -> iteratif çöz (DST sınırlarında 2-3 adım yeter)
+    let guess = wallUtc;
+    for (let i = 0; i < 3; i++) {
+        const off = ianaOffsetMinutes(new Date(guess), iana);
+        const next = wallUtc - off * 60000;
+        if (next === guess) break;
+        guess = next;
+    }
+    return ianaOffsetMinutes(new Date(guess), iana) / 60;
+}
+
+// Yerin saat dilimi: IANA varsa Intl ile (tarihsel DST dahil), yoksa TR kuralı ya da boylam
+function utcOffsetHours(dateStr, timeStr, place) {
+    if (place && place.tz) {
+        try { return tzOffsetFromIana(dateStr, timeStr, place.tz); } catch (e) { /* eski tarayıcı */ }
+    }
+    if (place && place.cc === 'TR') return turkeyUtcOffset(dateStr);
+    return Math.round(((place && place.lon) || 0) / 15);
+}
+
+function fmtTz(tz) {
+    const sign = tz >= 0 ? '+' : '-';
+    const a = Math.abs(tz);
+    const h = Math.floor(a);
+    const m = Math.round((a - h) * 60);
+    return sign + h + (m ? ':' + String(m).padStart(2, '0') : '');
+}
+
+// ---------- TÜRKİYE KURALI (IANA yoksa yedek) ----------
 // 7 Eylül 2016'dan itibaren kalıcı UTC+3. Öncesinde: kış UTC+2,
 // yaz saati (Mart sonu Pazar - Ekim sonu Pazar arası) UTC+3.
 function turkeyUtcOffset(dateStr) {
@@ -388,10 +554,10 @@ function turkeyUtcOffset(dateStr) {
 function calcChartData(p) {
     const { dateVal, timeVal, lat, lon, tz, hsys, city } = p;
     
-    // UTC'ye çevir
+    // UTC'ye çevir (tz kesirli olabilir: örn. Hindistan +5.5 -> dakika bazında uygula)
     const [hh, mm] = timeVal.split(':').map(Number);
     const [Y, Mo, Dy] = dateVal.split('-').map(Number);
-    const utc = new Date(Date.UTC(Y, Mo - 1, Dy, hh - tz, mm, 0));
+    const utc = new Date(Date.UTC(Y, Mo - 1, Dy, hh, mm - Math.round(tz * 60), 0));
     
     const jd = julianDate(utc);
     const gst = gmst(jd);
@@ -427,28 +593,28 @@ function calcChartData(p) {
 function computeChart() {
     const dateVal = document.getElementById('birth-date').value;
     const timeVal = document.getElementById('birth-time').value;
-    const sel = document.getElementById('city');
-    const opt = sel.options[sel.selectedIndex];
     const hsys = document.getElementById('house-system').value;
+    const place = selectedPlace;
     
-    const tz = turkeyUtcOffset(dateVal);
+    const tz = utcOffsetHours(dateVal, timeVal, place);
     
     chart = calcChartData({
         dateVal, timeVal,
-        lat: parseFloat(opt.dataset.lat),
-        lon: parseFloat(opt.dataset.lon),
+        lat: place.lat,
+        lon: place.lon,
         tz, hsys,
-        city: opt.text
+        city: placeLabel(place)
     });
+    chart.place = place;
     
     // Doğum bilgisi hafızası
     try {
         localStorage.setItem('astro_birth', JSON.stringify({
-            d: dateVal, t: timeVal, c: sel.value, h: hsys
+            d: dateVal, t: timeVal, h: hsys, place: place
         }));
     } catch (e) { /* localStorage kapalı olabilir */ }
     
-    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(chart.asc), '| MC:', fmtZodiac(chart.mc), '| UTC+' + tz);
+    console.log('✅ Hesaplandı — Yükselen:', fmtZodiac(chart.asc), '| MC:', fmtZodiac(chart.mc), '| UTC' + fmtTz(tz));
     return chart;
 }
 
@@ -689,7 +855,7 @@ function drawWheel(c) {
 function fillInfo(c) {
     const [Y, Mo, Dy] = c.dateVal.split('-').map(Number);
     document.getElementById('info-date').innerHTML =
-        `<i>${Dy} ${MONTHS_EN[Mo - 1]} ${Y} - ${c.timeVal}</i> (UTC+${c.tz})`;
+        `<i>${Dy} ${MONTHS_EN[Mo - 1]} ${Y} - ${c.timeVal}</i> (UTC${fmtTz(c.tz)})`;
     
     const utcH = String(c.utc.getUTCHours()).padStart(2, '0');
     const utcM = String(c.utc.getUTCMinutes()).padStart(2, '0');
@@ -700,6 +866,10 @@ function fillInfo(c) {
     document.getElementById('info-coords').innerHTML =
         `<i>${fmtCoord(c.lat, 'N', 'S')}, ${fmtCoord(c.lon, 'E', 'W')}</i>`;
     document.getElementById('info-city').innerHTML = `<i>${c.city}</i>`;
+    if (c.place) {
+        document.getElementById('info-country').innerHTML =
+            `${flagEmoji(c.place.cc)} <i>${c.place.country || '-'}</i>`;
+    }
     
     const hsysNames = {
         placidus: 'Placidus system',
@@ -1632,8 +1802,6 @@ function computeSynastry() {
     
     const pd = document.getElementById('p-date').value;
     const pt = document.getElementById('p-time').value;
-    const psel = document.getElementById('p-city');
-    const popt = psel.options[psel.selectedIndex];
     const out = document.getElementById('synastry-content');
     
     if (!pd || !pt) {
@@ -1643,11 +1811,11 @@ function computeSynastry() {
     
     const partner = calcChartData({
         dateVal: pd, timeVal: pt,
-        lat: parseFloat(popt.dataset.lat),
-        lon: parseFloat(popt.dataset.lon),
-        tz: turkeyUtcOffset(pd),
+        lat: partnerPlace.lat,
+        lon: partnerPlace.lon,
+        tz: utcOffsetHours(pd, pt, partnerPlace),
         hsys: chart.hsys,
-        city: popt.text
+        city: placeLabel(partnerPlace)
     });
     
     const synAspects = calcSynastryAspects(chart, partner);
@@ -1705,7 +1873,7 @@ function computeSynastry() {
     
     html += `<div class="r-card blue"><h4>ℹ️ Partner Haritası Özeti</h4>
         <p>☉ Güneş: ${fmtZodiac(partner.positions.sun.lon)} · ☽ Ay: ${fmtZodiac(partner.positions.moon.lon)} · ⬆️ Yükselen: ${fmtZodiac(partner.asc)}</p>
-        <p>Doğum: ${pd} ${pt}, ${popt.text} (UTC+${partner.tz})</p></div>`;
+        <p>Doğum: ${pd} ${pt}, ${placeLabel(partnerPlace)} (UTC${fmtTz(partner.tz)})</p></div>`;
     
     out.innerHTML = html;
     console.log('💞 Sinastri hesaplandı — genel uyum:', overall + '%');
@@ -1785,9 +1953,15 @@ function fillTransitCalendar(c) {
 function buildShareUrl() {
     const d = document.getElementById('birth-date').value;
     const t = document.getElementById('birth-time').value;
-    const city = document.getElementById('city').value;
     const h = document.getElementById('house-system').value;
-    return location.origin + location.pathname + `?d=${d}&t=${encodeURIComponent(t)}&c=${city}&h=${h}`;
+    const p = selectedPlace;
+    const params = new URLSearchParams({
+        d, t, h,
+        n: p.name, co: p.country || '', cc: p.cc || '',
+        lat: p.lat.toFixed(4), lon: p.lon.toFixed(4)
+    });
+    if (p.tz) params.set('tzi', p.tz);
+    return location.origin + location.pathname + '?' + params.toString();
 }
 
 function downloadPNG() {
@@ -1823,19 +1997,30 @@ async function copyShareLink(btn) {
 // URL parametreleri veya localStorage'dan doğum bilgisini yükle
 function restoreBirthData() {
     const qp = new URLSearchParams(location.search);
-    let d = null, t = null, cityVal = null, h = null;
+    let d = null, t = null, h = null, place = null;
     
     if (qp.has('d')) {
         d = qp.get('d');
         t = qp.get('t');
-        cityVal = qp.get('c');
         h = qp.get('h');
+        if (qp.has('lat') && qp.has('lon')) {
+            place = {
+                name: qp.get('n') || 'Seçilen Yer',
+                country: qp.get('co') || '',
+                cc: qp.get('cc') || '',
+                admin: '',
+                lat: parseFloat(qp.get('lat')),
+                lon: parseFloat(qp.get('lon')),
+                tz: qp.get('tzi') || null
+            };
+        }
         console.log('🔗 Paylaşım linkinden bilgiler yüklendi');
     } else {
         try {
             const saved = JSON.parse(localStorage.getItem('astro_birth') || 'null');
             if (saved) {
-                d = saved.d; t = saved.t; cityVal = saved.c; h = saved.h;
+                d = saved.d; t = saved.t; h = saved.h;
+                if (saved.place && typeof saved.place.lat === 'number') place = saved.place;
                 console.log('💾 Kayıtlı doğum bilgileri yüklendi');
             }
         } catch (e) { /* yok say */ }
@@ -1843,9 +2028,9 @@ function restoreBirthData() {
     
     if (d) document.getElementById('birth-date').value = d;
     if (t) document.getElementById('birth-time').value = t;
-    if (cityVal) {
-        const sel = document.getElementById('city');
-        if ([...sel.options].some(o => o.value === cityVal)) sel.value = cityVal;
+    if (place) {
+        selectedPlace = place;
+        document.getElementById('city-input').value = placeLabel(place);
     }
     if (h) {
         const hs = document.getElementById('house-system');
@@ -1903,7 +2088,7 @@ function buildFullChartContext() {
     const c = chart;
     const L = [];
     
-    L.push(`DOĞUM BİLGİLERİ: ${c.dateVal}, saat ${c.timeVal} (UTC+${c.tz}), ${c.city} (${c.lat.toFixed(2)}K, ${c.lon.toFixed(2)}D). Ev sistemi: ${c.hsys}.`);
+    L.push(`DOĞUM BİLGİLERİ: ${c.dateVal}, saat ${c.timeVal} (UTC${fmtTz(c.tz)}), ${c.city} (enlem ${c.lat.toFixed(2)}, boylam ${c.lon.toFixed(2)}). Ev sistemi: ${c.hsys}.`);
     L.push(`EKSENLER: Yükselen (AC): ${fmtZodiac(c.asc)} | MC (tepe noktası): ${fmtZodiac(c.mc)} | Alçalan (DC): ${fmtZodiac(norm360(c.asc + 180))} | IC: ${fmtZodiac(norm360(c.mc + 180))}.`);
     
     L.push('GEZEGEN KONUMLARI: ' + Object.keys(c.positions).map(k => {
@@ -2184,9 +2369,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Paylaşım linki / kayıtlı bilgiler
     restoreBirthData();
     
-    // Partner şehir listesini ana listeden kopyala
-    const pCity = document.getElementById('p-city');
-    pCity.innerHTML = document.getElementById('city').innerHTML;
+    // Dünya şehir arama kutuları (kendi + partner)
+    initCitySearch('city-input', 'city-results', (p) => { selectedPlace = p; });
+    initCitySearch('p-city-input', 'p-city-results', (p) => { partnerPlace = p; });
     
     // Sekmeler
     document.querySelectorAll('.tab').forEach(tab => {

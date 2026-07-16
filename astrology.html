@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.5.0">
+    <link rel="stylesheet" href="astrology.css?v=5.6.0">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -22,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.5.0</span>
+            <span class="badge">v5.6.0</span>
         </div>
     </div>
 
@@ -55,20 +55,10 @@
                     <label>Doğum Saati</label>
                     <input type="time" id="birth-time" value="15:00">
                 </div>
-                <div>
-                    <label>Şehir</label>
-                    <select id="city">
-                        <option value="ankara" data-lat="39.9334" data-lon="32.8597" data-tz="2" selected>Ankara</option>
-                        <option value="istanbul" data-lat="41.0082" data-lon="28.9784" data-tz="2">İstanbul</option>
-                        <option value="izmir" data-lat="38.4237" data-lon="27.1428" data-tz="2">İzmir</option>
-                        <option value="antalya" data-lat="36.8969" data-lon="30.7133" data-tz="2">Antalya</option>
-                        <option value="bursa" data-lat="40.1885" data-lon="29.0610" data-tz="2">Bursa</option>
-                        <option value="adana" data-lat="37.0000" data-lon="35.3213" data-tz="2">Adana</option>
-                        <option value="konya" data-lat="37.8746" data-lon="32.4932" data-tz="2">Konya</option>
-                        <option value="trabzon" data-lat="41.0027" data-lon="39.7168" data-tz="2">Trabzon</option>
-                        <option value="diyarbakir" data-lat="37.9144" data-lon="40.2306" data-tz="2">Diyarbakır</option>
-                        <option value="van" data-lat="38.4891" data-lon="43.4089" data-tz="2">Van</option>
-                    </select>
+                <div class="city-search">
+                    <label>Doğum Yeri (dünya geneli şehir ara)</label>
+                    <input type="text" id="city-input" value="Ankara, Türkiye" placeholder="Şehir yazın: İstanbul, Berlin, New York..." autocomplete="off">
+                    <div class="city-results" id="city-results"></div>
                 </div>
             </div>
             <button id="calc-btn" class="calc-btn">✨ Haritayı Hesapla</button>
@@ -82,7 +72,7 @@
             <tr><td class="label">Ev sistemi:</td><td class="value" id="info-hsys"><i>Placidus system</i></td></tr>
             <tr><td class="label">Enlem, Boylam:</td><td class="value" id="info-coords">-</td></tr>
             <tr><td class="label">Şehir:</td><td class="value" id="info-city">-</td></tr>
-            <tr><td class="label">Ülke:</td><td class="value">🇹🇷 <i>Turkey (TR)</i></td></tr>
+            <tr><td class="label">Ülke:</td><td class="value" id="info-country">🇹🇷 <i>Türkiye</i></td></tr>
         </table>
 
         <!-- Sekmeler -->
@@ -139,9 +129,10 @@
                         <label>Doğum Saati</label>
                         <input type="time" id="p-time" value="07:30">
                     </div>
-                    <div>
-                        <label>Şehir</label>
-                        <select id="p-city"></select>
+                    <div class="city-search">
+                        <label>Doğum Yeri</label>
+                        <input type="text" id="p-city-input" value="Ankara, Türkiye" placeholder="Şehir ara..." autocomplete="off">
+                        <div class="city-results" id="p-city-results"></div>
                     </div>
                 </div>
                 <button id="syn-btn" class="calc-btn">💞 Uyumu Hesapla</button>
@@ -178,7 +169,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.5.0</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.6.0</div>
     </div>
 
     <!-- Chatbot -->
@@ -204,6 +195,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.5.0"></script>
+    <script src="astrology.js?v=5.6.0"></script>
 </body>
 </html>
