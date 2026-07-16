@@ -125,28 +125,50 @@ body {
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 14px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    align-items: start;
 }
+
+/* İsim ve şehir alanları mobilde tam satır kaplar; tarih + saat yan yana */
+.form-grid .f-name,
+.form-grid .f-city { grid-column: 1 / -1; }
 
 .birth-form label {
     display: block;
     font-size: 12px;
     color: #777;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .birth-form input,
 .birth-form select {
     width: 100%;
+    min-width: 0;
+    height: 44px;
     padding: 10px 12px;
     border: 1.5px solid #ddd;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 14px;
     background: white;
+    color: #333;
     font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* iOS'ta tarih/saat alanlarının içeriği sola hizalı ve aynı yükseklikte kalsın */
+.birth-form input[type="date"],
+.birth-form input[type="time"] {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    -webkit-text-fill-color: #333;
 }
 
 .birth-form input:focus,
@@ -189,13 +211,31 @@ body {
 .city-item.muted:hover { background: white; }
 .city-item .ci-country { color: #8a7aa5; font-size: 12px; margin-left: 4px; }
 
+/* Seçilen yerin onay satırı */
+.place-confirm {
+    display: none;
+    margin-top: 7px;
+    padding: 7px 11px;
+    background: #f1fdf5;
+    border: 1px solid #c6ecd2;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #2c7a3d;
+    line-height: 1.5;
+}
+
+.place-confirm.show { display: block; }
+.place-confirm .pc-coords { color: #6da97c; font-size: 11px; }
+
 .calc-btn {
+    display: block;
+    width: 100%;
     background: linear-gradient(135deg, #7a5af5, #4a2580);
     color: white;
     border: none;
-    padding: 12px 28px;
+    padding: 13px 28px;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
@@ -679,6 +719,8 @@ body {
 .syn-form input,
 .syn-form select {
     width: 100%;
+    min-width: 0;
+    height: 44px;
     padding: 10px 12px;
     border: 1.5px solid #eeced9;
     border-radius: 10px;
@@ -874,6 +916,12 @@ body {
     .info-table td { padding: 9px 26px; }
     .edit-link-row, .birth-form { padding-left: 26px; padding-right: 26px; }
     .chart-actions { gap: 16px; }
+    
+    /* Geniş ekranda: isim + tarih + saat tek satır, şehir tam satır */
+    .form-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid .f-name { grid-column: auto; }
+    .compare-form .form-grid { grid-template-columns: 1fr 1fr; }
+    .calc-btn { width: auto; display: inline-block; }
 }
 
 /* Yatay tablet / küçük masaüstü (1024px+) */

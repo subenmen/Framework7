@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.7.0">
+    <link rel="stylesheet" href="astrology.css?v=5.7.1">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -22,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.7.0</span>
+            <span class="badge">v5.7.1</span>
         </div>
     </div>
 
@@ -50,22 +50,23 @@
         <!-- Doğum Bilgileri Formu -->
         <div class="birth-form" id="birth-form" style="display:none;">
             <div class="form-grid">
-                <div>
-                    <label>İsim</label>
+                <div class="f-name">
+                    <label>👤 İsim</label>
                     <input type="text" id="person-name" placeholder="örn. Ali" autocomplete="off">
                 </div>
-                <div>
-                    <label>Doğum Tarihi</label>
+                <div class="f-date">
+                    <label>📅 Doğum Tarihi</label>
                     <input type="date" id="birth-date" value="1993-01-31">
                 </div>
-                <div>
-                    <label>Doğum Saati</label>
+                <div class="f-time">
+                    <label>🕐 Doğum Saati</label>
                     <input type="time" id="birth-time" value="15:00">
                 </div>
-                <div class="city-search">
-                    <label>Doğum Yeri (dünya geneli şehir ara)</label>
+                <div class="city-search f-city">
+                    <label>📍 Doğum Yeri</label>
                     <input type="text" id="city-input" value="Ankara, Türkiye" placeholder="Şehir yazın: İstanbul, Berlin, New York..." autocomplete="off">
                     <div class="city-results" id="city-results"></div>
+                    <div class="place-confirm" id="place-confirm"></div>
                 </div>
             </div>
             <button id="calc-btn" class="calc-btn">✨ Haritayı Hesapla</button>
@@ -129,18 +130,19 @@
                 <h4>❤️ Partner Doğum Bilgileri</h4>
                 <p class="syn-note">Sizin haritanız yukarıdaki bilgilerden alınır; partnerinizin bilgilerini girin ve uyumu hesaplayın.</p>
                 <div class="form-grid">
-                    <div>
-                        <label>Doğum Tarihi</label>
+                    <div class="f-date">
+                        <label>📅 Doğum Tarihi</label>
                         <input type="date" id="p-date" value="1995-03-24">
                     </div>
-                    <div>
-                        <label>Doğum Saati</label>
+                    <div class="f-time">
+                        <label>🕐 Doğum Saati</label>
                         <input type="time" id="p-time" value="07:30">
                     </div>
-                    <div class="city-search">
-                        <label>Doğum Yeri</label>
+                    <div class="city-search f-city">
+                        <label>📍 Doğum Yeri</label>
                         <input type="text" id="p-city-input" value="Ankara, Türkiye" placeholder="Şehir ara..." autocomplete="off">
                         <div class="city-results" id="p-city-results"></div>
+                        <div class="place-confirm" id="p-place-confirm"></div>
                     </div>
                 </div>
                 <button id="syn-btn" class="calc-btn">💞 Uyumu Hesapla</button>
@@ -196,7 +198,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.7.0</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.7.1</div>
     </div>
 
     <!-- Chatbot -->
@@ -222,6 +224,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.7.0"></script>
+    <script src="astrology.js?v=5.7.1"></script>
 </body>
 </html>

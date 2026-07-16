@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.7.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.7.0 yükleniyor...');
+// KUBEY Astroloji v5.7.1 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.7.1 yükleniyor...');
 
-const APP_VERSION = '5.7.0';
+const APP_VERSION = '5.7.1';
 
 const DEG = Math.PI / 180;
 
@@ -427,6 +427,17 @@ function placeLabel(p) {
     return p.name + (p.country ? ', ' + p.country : '');
 }
 
+// Girdi alanının altında seçilen yeri bayrak + koordinatla doğrular
+function showPlaceConfirm(confirmId, p) {
+    const el = document.getElementById(confirmId);
+    if (!el) return;
+    if (!p || typeof p.lat !== 'number') { el.classList.remove('show'); el.innerHTML = ''; return; }
+    const lat = Math.abs(p.lat).toFixed(2) + '°' + (p.lat >= 0 ? 'K' : 'G');
+    const lon = Math.abs(p.lon).toFixed(2) + '°' + (p.lon >= 0 ? 'D' : 'B');
+    el.innerHTML = `✓ ${flagEmoji(p.cc)} <strong>${escapeHtml(p.name)}</strong>${p.admin ? ', ' + escapeHtml(p.admin) : ''}${p.country ? ' — ' + escapeHtml(p.country) : ''} <span class="pc-coords">(${lat}, ${lon})</span>`;
+    el.classList.add('show');
+}
+
 // Open-Meteo ücretsiz geocoding (anahtar gerektirmez); hata olursa yerleşik liste
 async function searchCities(q) {
     try {
@@ -451,13 +462,14 @@ async function searchCities(q) {
     }
 }
 
-function initCitySearch(inputId, resultsId, onSelect) {
+function initCitySearch(inputId, resultsId, onSelect, confirmId) {
     const input = document.getElementById(inputId);
     const box = document.getElementById(resultsId);
     let timer = null;
     
     input.addEventListener('input', () => {
         clearTimeout(timer);
+        if (confirmId) showPlaceConfirm(confirmId, null); // yazarken eski onayı gizle
         const q = input.value.trim();
         if (q.length < 2) { box.innerHTML = ''; box.style.display = 'none'; return; }
         timer = setTimeout(async () => {
@@ -2021,6 +2033,7 @@ function applyProfileToForm(p) {
     document.getElementById('birth-time').value = p.t;
     selectedPlace = p.place;
     document.getElementById('city-input').value = placeLabel(p.place);
+    showPlaceConfirm('place-confirm', p.place);
 }
 
 function activateProfile(id) {
@@ -2302,6 +2315,7 @@ function restoreBirthData() {
     if (place) {
         selectedPlace = place;
         document.getElementById('city-input').value = placeLabel(place);
+        showPlaceConfirm('place-confirm', place);
     }
     if (h) {
         const hs = document.getElementById('house-system');
@@ -2653,8 +2667,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cmp-btn').addEventListener('click', runComparison);
     
     // Dünya şehir arama kutuları (kendi + partner)
-    initCitySearch('city-input', 'city-results', (p) => { selectedPlace = p; });
-    initCitySearch('p-city-input', 'p-city-results', (p) => { partnerPlace = p; });
+    initCitySearch('city-input', 'city-results', (p) => { selectedPlace = p; showPlaceConfirm('place-confirm', p); }, 'place-confirm');
+    initCitySearch('p-city-input', 'p-city-results', (p) => { partnerPlace = p; showPlaceConfirm('p-place-confirm', p); }, 'p-place-confirm');
+    showPlaceConfirm('place-confirm', selectedPlace);
+    showPlaceConfirm('p-place-confirm', partnerPlace);
     
     // Sekmeler
     document.querySelectorAll('.tab').forEach(tab => {
