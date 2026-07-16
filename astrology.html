@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.2.0">
+    <link rel="stylesheet" href="astrology.css?v=5.3.0">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -22,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.2.0</span>
+            <span class="badge">v5.3.0</span>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
         <div class="tabs">
             <button class="tab active" data-tab="chart">🌀 Chart</button>
             <button class="tab" data-tab="yorum">🔮 Yorum</button>
-            <button class="tab" data-tab="daily">🌙 Günlük Fal</button>
+            <button class="tab" data-tab="daily">🌙 Fal</button>
             <button class="tab" data-tab="synastry">❤️ Sinastri</button>
             <button class="tab" data-tab="transits">📅 Transitler</button>
             <button class="tab" data-tab="aspects">⭐ Aspects</button>
@@ -110,10 +110,19 @@
         </div>
 
         <div class="tab-content" id="tab-yorum">
+            <div class="period-toggle">
+                <button class="pt-btn dt-btn active" data-mode="short">⚡ Kısa Yorum</button>
+                <button class="pt-btn dt-btn" data-mode="detailed">📜 Detaylı Yorum</button>
+            </div>
             <div id="interpretation-content" class="reading"></div>
         </div>
 
         <div class="tab-content" id="tab-daily">
+            <div class="period-toggle">
+                <button class="pt-btn fal-btn active" data-period="daily">🌙 Günlük</button>
+                <button class="pt-btn fal-btn" data-period="weekly">📆 Haftalık</button>
+                <button class="pt-btn fal-btn" data-period="monthly">🗓️ Aylık</button>
+            </div>
             <div id="daily-content" class="reading"></div>
         </div>
 
@@ -169,7 +178,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.2.0</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.3.0</div>
     </div>
 
     <!-- Chatbot -->
@@ -195,6 +204,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.2.0"></script>
+    <script src="astrology.js?v=5.3.0"></script>
 </body>
 </html>

@@ -1,8 +1,7 @@
-// KUBEY Astroloji v5.2.0 - Harita + Yorum + Günlük Fal + Sinastri + Transitler + Ay Fazları + PWA
-// Chatbot artık TÜM harita verisini önce öğrenir, sonra yorumlar
-console.log('🌟 Astroloji v5.2.0 yükleniyor...');
+// KUBEY Astroloji v5.3.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.3.0 yükleniyor...');
 
-const APP_VERSION = '5.2.0';
+const APP_VERSION = '5.3.0';
 
 const DEG = Math.PI / 180;
 
@@ -874,7 +873,172 @@ const ASPECT_MEANING = {
     'Altmışlık': 'arasında değerlendirilmeyi bekleyen bir fırsat vardır'
 };
 
+// ---- DETAYLI YORUM İÇERİKLERİ ----
+const QUALITIES = ['Öncü', 'Sabit', 'Değişken'];
+const ELEMENT_NAMES_TR = { fire: 'Ateş', earth: 'Toprak', air: 'Hava', water: 'Su' };
+
+const SIGN_RULER = {
+    'Koç': 'mars', 'Boğa': 'venus', 'İkizler': 'mercury', 'Yengeç': 'moon',
+    'Aslan': 'sun', 'Başak': 'mercury', 'Terazi': 'venus', 'Akrep': 'pluto',
+    'Yay': 'jupiter', 'Oğlak': 'saturn', 'Kova': 'uranus', 'Balık': 'neptune'
+};
+
+const SIGN_ADJ = {
+    'Koç': 'cesur, hızlı ve doğrudan', 'Boğa': 'sabırlı, kararlı ve keyif odaklı',
+    'İkizler': 'meraklı, esnek ve konuşkan', 'Yengeç': 'duyarlı, koruyucu ve sezgisel',
+    'Aslan': 'gururlu, yaratıcı ve cömert', 'Başak': 'titiz, analitik ve pratik',
+    'Terazi': 'dengeli, kibar ve estetik', 'Akrep': 'yoğun, derin ve stratejik',
+    'Yay': 'iyimser, açık sözlü ve maceracı', 'Oğlak': 'disiplinli, hedefli ve temkinli',
+    'Kova': 'özgün, bağımsız ve yenilikçi', 'Balık': 'hayalperest, şefkatli ve akışkan'
+};
+
+const SIGN_DETAILS = {
+    'Koç':    { motto: 'Ben varım',       strengths: 'cesaret, öncülük, dürüstlük, hızlı karar alma', challenges: 'sabırsızlık, öfke kontrolü, başladığını yarım bırakma eğilimi', love: 'Aşkta fatihtir: heyecan, tutku ve meydan okuma arar. İlgisini canlı tutan, kendi alanına saygı duyan partnerlerle mutlu olur.', career: 'Rekabetçi ve hızlı ortamlarda parlar: girişimcilik, satış, spor ve hızlı karar gerektiren tüm alanlar.' },
+    'Boğa':   { motto: 'Ben sahibim',     strengths: 'sadakat, sabır, pratiklik, estetik zevk', challenges: 'inatçılık, değişime direnç, konfor alanına aşırı bağlılık', love: 'Aşkta yavaş ısınır ama bir kez bağlanınca kaya gibidir. Dokunulmak, güzel yemek ve güven ister.', career: 'Finans, gastronomi, sanat, gayrimenkul ve istikrar gerektiren uzun soluklu işlerde başarılıdır.' },
+    'İkizler':{ motto: 'Ben düşünürüm',   strengths: 'zekâ, uyum yeteneği, espri, çok yönlülük', challenges: 'dağınıklık, kararsızlık, yüzeysellik riski', love: 'Aşkta önce zihin ister: konuşamadığı birine kalbini açmaz. İlişkide çeşitlilik ve hareket şarttır.', career: 'İletişim, medya, yazarlık, öğretim, ticaret — aynı anda birden çok işi yürütebilir.' },
+    'Yengeç': { motto: 'Ben hissederim',  strengths: 'şefkat, sezgi, koruyuculuk, güçlü hafıza', challenges: 'alınganlık, geçmişe takılma, duyguları dolaylı ifade etme', love: 'Aşkta yuva kurmak ister; duygusal güvenlik her şeyden önce gelir. Zaman zaman sahiplenici olabilir.', career: 'İnsanlara bakım veren alanlar: psikoloji, sağlık, eğitim, gıda, aile şirketleri.' },
+    'Aslan':  { motto: 'Ben yaratırım',   strengths: 'cömertlik, karizma, yaratıcılık, sadakat', challenges: 'ego, takdir bağımlılığı, drama eğilimi', love: 'Aşkta görkemli sever: romantizm, jest ve sahne ister. Partneriyle gurur duymak, onunla parlamak ister.', career: 'Sahne, yöneticilik, sanat, eğlence — görünür olduğu ve takdir edildiği her alan.' },
+    'Başak':  { motto: 'Ben analiz ederim', strengths: 'titizlik, çalışkanlık, pratik zekâ, yardımseverlik', challenges: 'aşırı eleştiri, mükemmeliyetçilik, evham', love: 'Aşkta hizmet ederek sever: küçük ilgiler onun sevgi dilidir. Eleştirisini de sevgisinden yapar.', career: 'Detay ve düzen isteyen işler: sağlık, analiz, editörlük, kalite kontrol, veri.' },
+    'Terazi': { motto: 'Ben dengelerim',  strengths: 'diplomasi, adalet duygusu, estetik, zarafet', challenges: 'kararsızlık, çatışmadan kaçma, onay ihtiyacı', love: 'Aşk Terazi için yaşam alanıdır: ortaklık olmadan kendini eksik hisseder. Uyum, incelik ve eşitlik arar.', career: 'Hukuk, diplomasi, sanat, moda, danışmanlık — insan ilişkileri gerektiren her alan.' },
+    'Akrep':  { motto: 'Ben dönüştürürüm', strengths: 'irade, derinlik, sadakat, kriz yönetimi', challenges: 'kıskançlık, kontrol ihtiyacı, affetmekte zorlanma', love: 'Aşkta ya hep ya hiç: yüzeysel bağ kuramaz. Tam teslimiyet ve mutlak güven ister.', career: 'Araştırma, psikoloji, finans, cerrahi — krizin ve derinliğin olduğu her alan.' },
+    'Yay':    { motto: 'Ben ararım',      strengths: 'iyimserlik, vizyon, dürüstlük, felsefi bakış', challenges: 'aşırı vaat, patavatsızlık, bağlanma korkusu', love: 'Aşkta özgürlük ve macera arkadaşı arar: onunla birlikte büyüyen, dünyayı keşfeden bir partner ister.', career: 'Akademi, yayıncılık, turizm, hukuk, uluslararası işler — ufku genişleten alanlar.' },
+    'Oğlak':  { motto: 'Ben başarırım',   strengths: 'disiplin, dayanıklılık, stratejik akıl, güvenilirlik', challenges: 'katılık, işkoliklik, duyguları bastırma', love: 'Aşkta ağırdan alır ama ciddidir: uzun vadeli, güvenilir ve saygın bir birliktelik hedefler.', career: 'Yönetim, mühendislik, finans, kamu — hiyerarşi ve uzun vadeli hedef olan her yer.' },
+    'Kova':   { motto: 'Ben bilirim',     strengths: 'özgünlük, vizyonerlik, insancıllık, bağımsızlık', challenges: 'duygusal mesafe, fikirlerinde inat, aidiyet zorluğu', love: 'Aşkta önce dostluk ister; özgürlüğüne saygı duyan ve zihnine hitap eden partnerle açılır.', career: 'Teknoloji, bilim, sosyal projeler, havacılık — geleceği inşa eden alanlar.' },
+    'Balık':  { motto: 'Ben inanırım',    strengths: 'empati, yaratıcılık, sezgi, fedakârlık', challenges: 'sınır koyamama, kaçış eğilimi, aşırı idealize etme', love: 'Aşkta masalsı sever: ruhsal bir birleşme arar. Partnerini fazla idealize etme riski taşır.', career: 'Sanat, müzik, sinema, maneviyat, şifa meslekleri — hayal gücünün değerli olduğu alanlar.' }
+};
+
+const HOUSE_DETAILS = [
+    'Bu ev kimliğinizin vitrinidir: fiziksel görünümünüz, ilk izleniminiz ve hayata atılma tarzınız buradan okunur. Buradaki vurgu kendini dünyaya güçlü biçimde göstermek ister.',
+    'Maddi güvenlik, kazanç biçimi, sahip olduklarınız ve öz değer duygunuzun evidir. Buradaki yerleşimler paranızı nasıl kazandığınızı ve neye gerçekten değer verdiğinizi anlatır.',
+    'Zihin, dil, yazışmalar, kardeşler, komşular ve kısa yolculukların evidir. Öğrenme ve kendini ifade biçiminizin merkezi burasıdır.',
+    'Kökleriniz, aileniz, eviniz ve iç dünyanızın temelidir. Nereden geldiğinizi ve nerede gerçekten "evimde" hissettiğinizi gösterir.',
+    'Aşk, flört, yaratıcılık, çocuklar, hobiler ve sahnenin evidir. Hayattan keyif alma ve kendinizi yaratıcı biçimde ifade etme alanınız buradan görünür.',
+    'Günlük rutin, iş ortamı, hizmet ve sağlığın evidir. Bedeninizle ve gündelik düzeninizle kurduğunuz ilişkiyi anlatır.',
+    'Evlilik, ortaklıklar ve birebir ilişkilerin evidir. "Öteki" ile kurduğunuz her köprü — eş, iş ortağı, hatta açık rakipler — buradan okunur.',
+    'Dönüşüm, krizler, ortak kaynaklar, miras ve derin bağların evidir. Hayatın sizi söküp yeniden inşa ettiği alan burasıdır.',
+    'İnançlar, felsefe, yüksek öğrenim, yabancı kültürler ve uzak yolculukların evidir. Anlam arayışınızın pusulasıdır.',
+    'Kariyer, statü, toplumsal imaj ve yaşam hedefinin evidir. Dünyaya bırakmak istediğiniz iz buradan görünür.',
+    'Arkadaşlar, topluluklar, idealler ve gelecek hayallerinin evidir. Kalabalık içindeki yerinizi ve vizyonunuzu anlatır.',
+    'Bilinçaltı, rüyalar, inziva, gizli süreçler ve ruhsal arınmanın evidir. Görünmeyen iç dünyanızın en derin katmanıdır.'
+];
+
+const ASPECT_DETAIL = {
+    'Kavuşum': 'Bu iki enerji hayatınızda âdeta tek vücut çalışır; birini tetiklemeden diğerini kullanamazsınız. Bilinçli yönetildiğinde haritanızın en güçlü motorlarından biridir.',
+    'Karşıtlık': 'İki uç arasında gidip gelme ve ilişkilerde karşı tarafa yansıtma eğilimi yaratır. Olgunlaştıkça iki ucu aynı anda tutmayı öğrenir, büyük bir denge ustası olursunuz.',
+    'Üçgen': 'Bu yetenek size doğuştan hediye gibi verilmiştir; çaba harcamadan akar. Tek riski, fazla rahatlıktan dolayı bu potansiyeli es geçmektir — bilinçli kullanın.',
+    'Kare': 'İçsel bir sürtüşme yaratır; sizi rahatsız eder ama aynı zamanda en büyük gelişim motorunuzdur. Bu gerilimi üretken bir işe kanalize ettiğinizde olağanüstü sonuçlar alırsınız.',
+    'Altmışlık': 'Kapı aralık durur; siz ittiğinizde açılır. Küçük bir bilinçli çabayla büyük getiri sağlayan bir fırsat açısıdır.'
+};
+
+function signDetailLine(sign, signIdx) {
+    const det = SIGN_DETAILS[sign.name];
+    return `${sign.name}, ${QUALITIES[signIdx % 3].toLowerCase()} nitelikli bir ${ELEMENT_NAMES_TR[sign.element]} burcudur; yöneticisi ${PLANETS[SIGN_RULER[sign.name]].name}, mottosu "${det.motto}". Güçlü yanlar: ${det.strengths}. Gelişim alanları: ${det.challenges}.`;
+}
+
+let interpMode = 'short';
+
 function fillInterpretation(c) {
+    if (interpMode === 'detailed') fillInterpretationDetailed(c);
+    else fillInterpretationShort(c);
+}
+
+function fillInterpretationDetailed(c) {
+    const sunIdx = Math.floor(c.positions.sun.lon / 30);
+    const moonIdx = Math.floor(c.positions.moon.lon / 30);
+    const ascIdx = Math.floor(c.asc / 30);
+    const sunSign = SIGNS[sunIdx], moonSign = SIGNS[moonIdx], ascSign = SIGNS[ascIdx];
+    const sunH = c.positions.sun.house, moonH = c.positions.moon.house;
+    
+    let html = '';
+    
+    // GÜNEŞ — detaylı
+    const sunDet = SIGN_DETAILS[sunSign.name];
+    html += `<div class="r-card gold"><h4>☉ Güneş ${sunSign.symbol} ${sunSign.name} (${sunH}. ev) — Özünüz</h4>
+        <p>${SUN_TEXT[sunSign.name]}</p>
+        <p>${signDetailLine(sunSign, sunIdx)}</p>
+        <p><strong>💘 Aşk & ilişkiler:</strong> ${sunDet.love}</p>
+        <p><strong>💼 Kariyer:</strong> ${sunDet.career}</p>
+        <p><strong>🏠 Güneşiniz ${sunH}. evde:</strong> ${HOUSE_DETAILS[sunH - 1]} Yaşam enerjinizi ve kimliğinizi en çok bu alanda inşa edersiniz.</p>
+    </div>`;
+    
+    // AY — detaylı
+    const moonDet = SIGN_DETAILS[moonSign.name];
+    html += `<div class="r-card blue"><h4>☽ Ay ${moonSign.symbol} ${moonSign.name} (${moonH}. ev) — İç Dünyanız</h4>
+        <p>${MOON_TEXT[moonSign.name]}</p>
+        <p>${signDetailLine(moonSign, moonIdx)}</p>
+        <p><strong>💗 Duygusal ihtiyaç:</strong> ${moonDet.love}</p>
+        <p><strong>🏠 Ayınız ${moonH}. evde:</strong> ${HOUSE_DETAILS[moonH - 1]} Duygusal doyum ve güvenlik hissini en çok bu alanda ararsınız.</p>
+    </div>`;
+    
+    // YÜKSELEN — detaylı + harita yöneticisi
+    const rulerKey = SIGN_RULER[ascSign.name];
+    const rp = c.positions[rulerKey];
+    const rpSign = SIGNS[Math.floor(rp.lon / 30)];
+    html += `<div class="r-card"><h4>⬆️ Yükselen ${ascSign.symbol} ${ascSign.name} — Dış Kimliğiniz</h4>
+        <p>${ASC_TEXT[ascSign.name]}</p>
+        <p>${signDetailLine(ascSign, ascIdx)}</p>
+        <p><strong>🧭 Harita yöneticiniz ${PLANETS[rulerKey].name}:</strong> Yükselen burcunuzun yöneticisi haritanızın kaptanıdır. ${PLANETS[rulerKey].name}'iniz ${rpSign.symbol} ${rpSign.name} burcunda ${rp.house}. evde${rp.retro ? ' (retro)' : ''} — hayat yolculuğunuzun dümeni ${HOUSE_THEMES[rp.house - 1]} alanına döner. ${HOUSE_DETAILS[rp.house - 1]}</p>
+    </div>`;
+    
+    // TÜM GEZEGENLER — detaylı
+    let planetsHtml = '';
+    for (const key of Object.keys(c.positions)) {
+        if (key === 'sun' || key === 'moon') continue;
+        const p = c.positions[key];
+        const sIdx = Math.floor(p.lon / 30);
+        const sign = SIGNS[sIdx];
+        planetsHtml += `<p><strong style="color:${PLANETS[key].color}">${PLANETS[key].symbol} ${PLANETS[key].name} ${sign.symbol} ${sign.name} / ${p.house}. ev${p.retro ? ' ℞' : ''}</strong><br>
+        ${PLANET_ROLES[key].charAt(0).toUpperCase() + PLANET_ROLES[key].slice(1)}, ${SIGN_ADJ[sign.name]} bir üslupla işler. ${HOUSE_DETAILS[p.house - 1]}${p.retro ? ' Retro konumu bu enerjiyi içselleştirdiğinizi, dışa vurmadan önce derinlemesine işlediğinizi gösterir.' : ''}</p>`;
+    }
+    html += `<div class="r-card"><h4>🪐 Tüm Gezegenler — Detaylı Yerleşimler</h4>${planetsHtml}</div>`;
+    
+    // ELEMENT + NİTELİK DAĞILIMI
+    const elements = { fire: 0, earth: 0, air: 0, water: 0 };
+    const quals = [0, 0, 0];
+    for (const key of Object.keys(c.positions)) {
+        const idx = Math.floor(c.positions[key].lon / 30);
+        elements[SIGNS[idx].element]++;
+        quals[idx % 3]++;
+    }
+    const domEl = Object.keys(elements).sort((a, b) => elements[b] - elements[a])[0];
+    const domQ = quals.indexOf(Math.max(...quals));
+    const elTexts = {
+        fire: 'Ateş baskınlığı sizi tutkulu, girişken ve ilham verici yapar — motor her zaman çalışır, fren yapmayı öğrenmek gerekir.',
+        earth: 'Toprak baskınlığı sizi gerçekçi, üretken ve güvenilir yapar — somut sonuç almadan tatmin olmazsınız.',
+        air: 'Hava baskınlığı sizi zihinsel, sosyal ve fikir odaklı yapar — düşünceyi eyleme ve duyguya bağlamak gelişim alanınızdır.',
+        water: 'Su baskınlığı sizi sezgisel, empatik ve derin yapar — duygusal sınırlar koymak dengenizin anahtarıdır.'
+    };
+    const qTexts = [
+        'Öncü nitelik baskın: başlatmak sizin işiniz — projeleri ateşler, yön verirsiniz.',
+        'Sabit nitelik baskın: sürdürmek sizin işiniz — kararlılık ve dayanıklılık en büyük sermayeniz.',
+        'Değişken nitelik baskın: uyum sağlamak sizin işiniz — esnekliğiniz her koşulda yolunuzu açar.'
+    ];
+    html += `<div class="r-card"><h4>🔥 Element & Nitelik Analizi</h4>
+        <p><strong>Element dağılımı:</strong> 🔥 Ateş ${elements.fire} · 🌍 Toprak ${elements.earth} · 💨 Hava ${elements.air} · 💧 Su ${elements.water}</p>
+        <p>${elTexts[domEl]}</p>
+        <p><strong>Nitelik dağılımı:</strong> Öncü ${quals[0]} · Sabit ${quals[1]} · Değişken ${quals[2]}</p>
+        <p>${qTexts[domQ]}</p>
+    </div>`;
+    
+    // RETRO GEZEGENLER
+    const retros = Object.keys(c.positions).filter(k => c.positions[k].retro);
+    if (retros.length) {
+        html += `<div class="r-card blue"><h4>℞ Retro Gezegenleriniz</h4>
+        <p>Doğduğunuzda ${retros.map(k => PLANETS[k].name).join(', ')} geri harekette görünüyordu. Retro natal gezegenler, o alandaki enerjiyi içe dönük ve derinlemesine yaşadığınızı gösterir: ${retros.map(k => `<strong>${PLANETS[k].name}</strong> — ${PLANET_ROLES[k]} önce içeride olgunlaşır, sonra dışarı yansır`).join('; ')}.</p></div>`;
+    }
+    
+    // TÜM ASPECTLER — detaylı
+    let aspHtml = '';
+    c.aspects.forEach(a => {
+        aspHtml += `<p><strong style="color:${a.type.color}">${PLANETS[a.p1].symbol} ${a.type.symbol} ${PLANETS[a.p2].symbol} ${PLANETS[a.p1].name} ${a.type.name} ${PLANETS[a.p2].name}</strong> (orb ${a.orb.toFixed(1)}°)<br>
+        ${PLANET_ROLES[a.p1].charAt(0).toUpperCase() + PLANET_ROLES[a.p1].slice(1)} ile ${PLANET_ROLES[a.p2]} ${ASPECT_MEANING[a.type.name]}. ${ASPECT_DETAIL[a.type.name]}</p>`;
+    });
+    if (aspHtml) html += `<div class="r-card red"><h4>⭐ Tüm Natal Açılar — Detaylı</h4>${aspHtml}</div>`;
+    
+    document.getElementById('interpretation-content').innerHTML = html;
+}
+
+function fillInterpretationShort(c) {
     const sunSign = SIGNS[Math.floor(c.positions.sun.lon / 30)].name;
     const moonSign = SIGNS[Math.floor(c.positions.moon.lon / 30)].name;
     const ascSign = SIGNS[Math.floor(c.asc / 30)].name;
@@ -1047,6 +1211,178 @@ function fillDaily(c) {
 }
 
 // ============================================================
+// HAFTALIK & AYLIK FAL
+// ============================================================
+let falPeriod = 'daily';
+
+function fillFal(c) {
+    if (falPeriod === 'weekly') fillWeekly(c);
+    else if (falPeriod === 'monthly') fillMonthly(c);
+    else fillDaily(c);
+}
+
+function dayEnergyScore(c, jd) {
+    const hits = todaysTransitHits(c, jd);
+    let good = 0, hard = 0;
+    hits.forEach(h => {
+        if (h.asp.name === 'Üçgen' || h.asp.name === 'Altmışlık') good++;
+        else if (h.asp.name === 'Kare' || h.asp.name === 'Karşıtlık') hard++;
+        else good += 0.5;
+    });
+    return Math.max(1, Math.min(5, Math.round(3 + (good - hard) * 0.7)));
+}
+
+// Önümüzdeki N gün içindeki Yeni Ay / Dolunay olayları (natal ev bilgisiyle)
+function upcomingLunations(c, jdStart, days) {
+    const list = [];
+    for (const [target, emoji, name] of [[0, '🌑', 'Yeni Ay'], [180, '🌕', 'Dolunay']]) {
+        let jd = findNextPhase(jdStart, target);
+        while (jd && jd - jdStart <= days) {
+            const lon = geoLongitude('moon', jd);
+            const house = findHouse(lon, c.houses);
+            list.push({ jd, emoji, name, lon, house });
+            jd = findNextPhase(jd + 1, target);
+        }
+    }
+    return list.sort((a, b) => a.jd - b.jd);
+}
+
+function transitSentence(c, ev) {
+    const natalHouse = c.positions[ev.n].house;
+    const hard = (ev.asp.name === 'Kare' || ev.asp.name === 'Karşıtlık');
+    return `<p><span class="t-badge ${hard ? 'hard' : 'soft'}">${ev.asp.symbol}</span> <strong style="color:${PLANETS[ev.t].color}">${PLANETS[ev.t].symbol} ${PLANETS[ev.t].name}</strong> natal <strong style="color:${PLANETS[ev.n].color}">${PLANETS[ev.n].symbol} ${PLANETS[ev.n].name}</strong>'e ${ev.asp.name.toLowerCase()} yapıyor — ${PLANET_ROLES[ev.n]} (${natalHouse}. ev) ${TRANSIT_ASPECT_TEXT[ev.asp.name]}.</p>`;
+}
+
+function fillWeekly(c) {
+    const now = new Date();
+    const jdNow = julianDate(now);
+    const endDate = new Date(now.getTime() + 6 * 86400000);
+    
+    let html = `<div class="daily-date">📆 Haftalık Fal — ${now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>`;
+    
+    // Gün gün enerji haritası
+    const dayScores = [];
+    for (let d = 0; d < 7; d++) {
+        dayScores.push({ d, jd: jdNow + d, score: dayEnergyScore(c, jdNow + d) });
+    }
+    const best = dayScores.reduce((a, b) => (b.score > a.score ? b : a));
+    const worst = dayScores.reduce((a, b) => (b.score < a.score ? b : a));
+    
+    html += '<div class="r-card gold"><h4>⚡ Haftanın Enerji Haritası</h4>';
+    dayScores.forEach(ds => {
+        const date = jdToDate(ds.jd);
+        const dayName = ds.d === 0 ? 'Bugün' : date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'short' });
+        const tag = ds === best ? '<span class="day-tag good-tag">✨ En iyi gün</span>' : ds === worst ? '<span class="day-tag hard-tag">⚠️ Dikkat</span>' : '';
+        html += `<div class="day-row"><span class="day-name">${dayName}</span><span class="day-stars">${'⭐'.repeat(ds.score)}${'☆'.repeat(5 - ds.score)}</span>${tag}</div>`;
+    });
+    html += '</div>';
+    
+    // Hafta içi ay fazları
+    const lunations = upcomingLunations(c, jdNow, 7);
+    lunations.forEach(l => {
+        html += `<div class="r-card blue"><h4>${l.emoji} ${l.name} — ${fmtTrDate(jdToDate(l.jd))}</h4>
+        <p>${fmtZodiac(l.lon)} derecesinde, sizin <strong>${l.house}. evinizde</strong> gerçekleşiyor: ${HOUSE_THEMES[l.house - 1]} alanında ${l.name === 'Yeni Ay' ? 'yeni bir başlangıç kapısı açılıyor — niyet tohumlarınızı bu alana ekin' : 'konular doruğa ulaşıyor — sonuçlar görünür oluyor, tamamlanması gerekenler tamamlanıyor'}.</p></div>`;
+    });
+    
+    // Haftanın önemli transitleri
+    const events = computeTransitEvents(c, jdNow, 7, 1.2).slice(0, 10);
+    if (events.length) {
+        let list = '';
+        events.forEach(ev => {
+            const d = jdToDate(ev.jd);
+            const label = ev.day === 0 ? 'Bugün' : ev.day === 1 ? 'Yarın' : d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'short' });
+            list += `<p class="ev-date">🗓️ <strong>${label}</strong></p>` + transitSentence(c, ev);
+        });
+        html += `<div class="r-card"><h4>🎯 Haftanın Size Özel Transitleri</h4>${list}</div>`;
+    } else {
+        html += '<div class="r-card"><h4>🎯 Haftanın Size Özel Transitleri</h4><p>Bu hafta haritanıza dar açı yapan önemli bir transit yok — sakin bir hafta.</p></div>';
+    }
+    
+    // Haftalık tavsiye
+    const avg = dayScores.reduce((s, d) => s + d.score, 0) / 7;
+    const advice = avg >= 3.6
+        ? `Destekleyici bir hafta sizi bekliyor. Özellikle <strong>${best.d === 0 ? 'bugünü' : jdToDate(best.jd).toLocaleDateString('tr-TR', { weekday: 'long' }) + ' gününü'}</strong> önemli girişimler, görüşmeler ve başlangıçlar için ayırın.`
+        : avg >= 2.6
+        ? `Dengeli bir hafta: işlerinizi planlı yürütün. En verimli gününüz <strong>${jdToDate(best.jd).toLocaleDateString('tr-TR', { weekday: 'long' })}</strong>; <strong>${jdToDate(worst.jd).toLocaleDateString('tr-TR', { weekday: 'long' })}</strong> günü ise büyük kararları ertelemek akıllıca olur.`
+        : `Zorlayıcı enerjilerin baskın olduğu bir hafta: acele kararlardan kaçının, dinlenmeye alan açın. Yine de <strong>${jdToDate(best.jd).toLocaleDateString('tr-TR', { weekday: 'long' })}</strong> günü size nefes aldıracak.`;
+    html += `<div class="r-card red"><h4>💡 Haftanın Tavsiyesi</h4><p>${advice}</p></div>`;
+    
+    document.getElementById('daily-content').innerHTML = html;
+}
+
+function fillMonthly(c) {
+    const now = new Date();
+    const jdNow = julianDate(now);
+    const endDate = new Date(now.getTime() + 29 * 86400000);
+    
+    let html = `<div class="daily-date">🗓️ Aylık Fal — ${now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>`;
+    
+    const events = computeTransitEvents(c, jdNow, 30, 1.5);
+    
+    // Alan skorları
+    const areaScore = (keys) => {
+        let good = 0, hard = 0;
+        events.forEach(ev => {
+            if (!keys.includes(ev.n) && !keys.includes(ev.t)) return;
+            if (ev.asp.name === 'Üçgen' || ev.asp.name === 'Altmışlık') good++;
+            else if (ev.asp.name === 'Kavuşum') good += 0.5;
+            else hard++;
+        });
+        const total = good + hard;
+        return total ? Math.max(15, Math.min(95, Math.round(good / total * 100))) : 60;
+    };
+    const loveScore = areaScore(['venus', 'moon']);
+    const careerScore = areaScore(['sun', 'saturn', 'jupiter']);
+    const energyScore = areaScore(['mars', 'sun']);
+    
+    html += '<div class="r-card gold"><h4>📊 Ayın Alan Skorları</h4>';
+    [['❤️ Aşk & İlişkiler', loveScore, '#e0507a'], ['💼 Kariyer & Hedefler', careerScore, '#7a5af5'], ['⚡ Enerji & Sağlık', energyScore, '#e5a53a']].forEach(([label, val, color]) => {
+        html += `<div class="dom-bar">
+            <span class="dom-label" style="width:150px">${label}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${val}%;background:${color}"></div></div>
+            <span><strong>${val}%</strong></span>
+        </div>`;
+    });
+    html += '</div>';
+    
+    // Ay içi Yeni Ay / Dolunaylar
+    const lunations = upcomingLunations(c, jdNow, 30);
+    if (lunations.length) {
+        let lHtml = '';
+        lunations.forEach(l => {
+            lHtml += `<p><strong>${l.emoji} ${l.name} — ${fmtTrDate(jdToDate(l.jd))}</strong><br>
+            ${fmtZodiac(l.lon)}, sizin <strong>${l.house}. evinizde</strong>: ${HOUSE_THEMES[l.house - 1]} alanında ${l.name === 'Yeni Ay' ? 'yeni bir sayfa açmak için en güçlü zaman' : 'sonuç, hasat ve duygusal doruk zamanı'}.</p>`;
+        });
+        html += `<div class="r-card blue"><h4>🌙 Ayın Kilit Tarihleri (Yeni Ay & Dolunay)</h4>${lHtml}</div>`;
+    }
+    
+    // Ayın önemli transitleri
+    const top = events.slice(0, 12);
+    if (top.length) {
+        let list = '';
+        top.forEach(ev => {
+            const d = jdToDate(ev.jd);
+            const label = ev.day === 0 ? 'Bugün' : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+            list += `<p class="ev-date">🗓️ <strong>${label}</strong></p>` + transitSentence(c, ev);
+        });
+        html += `<div class="r-card"><h4>🎯 Ayın Size Özel Önemli Transitleri</h4>${list}</div>`;
+    } else {
+        html += '<div class="r-card"><h4>🎯 Ayın Size Özel Önemli Transitleri</h4><p>Bu ay haritanıza dar açı yapan önemli bir transit yok — sakin bir dönem.</p></div>';
+    }
+    
+    // Aylık genel tavsiye
+    const avgArea = (loveScore + careerScore + energyScore) / 3;
+    const advice = avgArea >= 65
+        ? 'Gökyüzü bu ay genel olarak sizden yana: girişimler, başvurular ve yeni başlangıçlar için verimli bir dönem. Yeni Ay tarihini niyetleriniz için kullanın.'
+        : avgArea >= 45
+        ? 'İnişli çıkışlı ama yönetilebilir bir ay: destekleyici transit günlerinde harekete geçin, zorlayıcı günlerde rutininizi koruyun.'
+        : 'Bu ay gökyüzü sizi biraz zorlayabilir: büyük riskleri erteleyin, sağlığınıza ve dinlenmeye öncelik verin. Zor açılar geçicidir — bu dönem olgunlaşma dönemidir.';
+    html += `<div class="r-card red"><h4>💡 Ayın Tavsiyesi</h4><p>${advice}</p></div>`;
+    
+    document.getElementById('daily-content').innerHTML = html;
+}
+
+// ============================================================
 // SİNASTRİ (İLİŞKİ UYUMU)
 // ============================================================
 const SYN_ORBS = { 'Kavuşum': 7, 'Karşıtlık': 6, 'Üçgen': 6, 'Kare': 5, 'Altmışlık': 4 };
@@ -1209,18 +1545,15 @@ function computeSynastry() {
 }
 
 // ============================================================
-// TRANSİT TAKVİMİ (30 gün)
+// TRANSİT TARAMA (ortak) + TRANSİT TAKVİMİ (30 gün)
 // ============================================================
-function fillTransitCalendar(c) {
-    const now = new Date();
-    const jdNow = julianDate(now);
+// Belirli gün aralığında (Ay hariç) transit-natal açıları tarar;
+// her (transit, natal, açı) üçlüsü için en kesin günü döndürür.
+function computeTransitEvents(c, jdStart, days, orbMax) {
     const TRANSIT_PLANETS = Object.keys(PLANETS).filter(k => k !== 'moon'); // Ay çok hızlı, listeyi boğar
-    const TIGHT_ORB = 1.0;
-    
-    // Her (transit gezegen, natal gezegen, açı) üçlüsü için en kesin günü tut
     const events = {};
-    for (let day = 0; day < 30; day++) {
-        const jd = jdNow + day;
+    for (let day = 0; day < days; day++) {
+        const jd = jdStart + day;
         for (const tKey of TRANSIT_PLANETS) {
             const tLon = geoLongitude(tKey, jd);
             for (const nKey of Object.keys(c.positions)) {
@@ -1228,7 +1561,7 @@ function fillTransitCalendar(c) {
                 if (diff > 180) diff = 360 - diff;
                 for (const asp of ASPECT_TYPES) {
                     const orb = Math.abs(diff - asp.angle);
-                    if (orb <= TIGHT_ORB) {
+                    if (orb <= orbMax) {
                         const key = `${tKey}-${nKey}-${asp.name}`;
                         if (!events[key] || orb < events[key].orb) {
                             events[key] = { day, jd, t: tKey, n: nKey, asp, orb };
@@ -1239,8 +1572,14 @@ function fillTransitCalendar(c) {
             }
         }
     }
+    return Object.values(events).sort((a, b) => a.day - b.day || a.orb - b.orb);
+}
+
+function fillTransitCalendar(c) {
+    const now = new Date();
+    const jdNow = julianDate(now);
     
-    const list = Object.values(events).sort((a, b) => a.day - b.day || a.orb - b.orb).slice(0, 25);
+    const list = computeTransitEvents(c, jdNow, 30, 1.0).slice(0, 25);
     const out = document.getElementById('transits-content');
     
     let html = `<div class="daily-date">📅 Önümüzdeki 30 Günün Önemli Transitleri</div>`;
@@ -1495,7 +1834,7 @@ function localBotAnswer(q) {
         const hits = todaysTransitHits(c, julianDate(new Date()));
         if (!hits.length) return 'Bugün haritana dar açı yapan önemli bir transit yok — sakin bir gökyüzü. Önümüzdeki 30 gün için "📅 Transitler" sekmesine bakabilirsin.';
         const list = hits.slice(0, 4).map(h => `${PLANETS[h.t].name} natal ${PLANETS[h.n].name}'e ${h.asp.name.toLowerCase()}`).join('; ');
-        return `Bugün sana özel ${hits.length} transit var: ${list}. Detaylar "🌙 Günlük Fal" sekmesinde, 30 günlük liste "📅 Transitler" sekmesinde.`;
+        return `Bugün sana özel ${hits.length} transit var: ${list}. Detaylar "🌙 Fal" sekmesinde, 30 günlük liste "📅 Transitler" sekmesinde.`;
     }
     if (ql.includes('element') || ql.includes('dominant') || ql.includes('baskın')) {
         const elements = { fire: 0, earth: 0, air: 0, water: 0 };
@@ -1516,7 +1855,7 @@ function localBotAnswer(q) {
     }
     if (ql.includes('bugün') || ql.includes('günlük') || ql.includes('fal') || ql.includes('günüm')) {
         document.querySelector('[data-tab="daily"]').click();
-        return 'Günlük falına baktım — "🌙 Günlük Fal" sekmesini açtım, oradan detayları görebilirsin! ✨';
+        return 'Falına baktım — "🌙 Fal" sekmesini açtım; oradan günlük, haftalık ve aylık öngörüleri görebilirsin! ✨';
     }
     if (ql.includes('aşk') || /(^|\s)ask/.test(ql) || ql.includes('ilişki') || ql.includes('sevgili')) {
         const venus = c.positions.venus;
@@ -1658,7 +1997,7 @@ function generateAll() {
     fillHouses(c);
     fillDominants(c);
     fillInterpretation(c);
-    fillDaily(c);
+    fillFal(c);
     fillTransitCalendar(c);
     
     // Harita değişti: chatbot yeni veriyi baştan öğrensin
@@ -1706,6 +2045,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('house-system').addEventListener('change', () => {
         console.log('🏠 Ev sistemi değişti:', document.getElementById('house-system').value);
         generateAll();
+    });
+    
+    // Yorum detay seviyesi (Kısa / Detaylı)
+    document.querySelectorAll('.dt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.dt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            interpMode = btn.dataset.mode;
+            if (chart) fillInterpretation(chart);
+        });
+    });
+    
+    // Fal dönemi (Günlük / Haftalık / Aylık)
+    document.querySelectorAll('.fal-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.fal-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            falPeriod = btn.dataset.period;
+            if (chart) fillFal(chart);
+        });
     });
     
     // Sinastri

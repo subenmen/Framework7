@@ -650,6 +650,64 @@ body {
 .mp-next { font-size: 12px !important; color: #a9b1d6 !important; }
 .mp-next strong { color: #ffd76e; }
 
+/* ============ DÖNEM / DETAY SEÇİCİLER ============ */
+.period-toggle {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.pt-btn {
+    padding: 8px 18px;
+    background: #f3f1fc;
+    border: 1.5px solid #d9d2f5;
+    border-radius: 18px;
+    color: #6b5bb5;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+}
+
+.pt-btn:hover { background: #e9e5fa; }
+
+.pt-btn.active {
+    background: linear-gradient(135deg, #7a5af5, #4a2580);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(122, 90, 245, 0.35);
+}
+
+/* ============ HAFTALIK ENERJİ LİSTESİ ============ */
+.day-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    border-bottom: 1px dashed #eee6d5;
+    font-size: 13px;
+    flex-wrap: wrap;
+}
+
+.day-row:last-child { border-bottom: none; }
+.day-row .day-name { width: 150px; color: #555; font-weight: 500; }
+.day-row .day-stars { letter-spacing: 2px; }
+
+.day-tag {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.day-tag.good-tag { background: #e2f2e5; color: #2c7a3d; }
+.day-tag.hard-tag { background: #fde3e3; color: #b33; }
+
+.ev-date { margin-top: 10px; color: #7a5af5; font-size: 12.5px; }
+
 /* ============ TRANSİT TAKVİMİ ============ */
 .t-badge {
     display: inline-block;
