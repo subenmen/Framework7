@@ -1,6 +1,6 @@
-// KUBEY Astroloji v4.2.0 - Astro-Seek tarzı profesyonel doğum haritası
-// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + gerçek Placidus ev sistemi
-console.log('🌟 Astroloji v4.2.0 yükleniyor...');
+// KUBEY Astroloji v5.0.0 - Doğum haritası + Yorum + Günlük Fal + Astro Chat
+// Gerçek astronomik hesaplamalar: JPL Kepler elemanları + 7 ev sistemi
+console.log('🌟 Astroloji v5.0.0 yükleniyor...');
 
 const DEG = Math.PI / 180;
 
@@ -752,6 +752,392 @@ function fillDominants(c) {
     document.getElementById('dominants-content').innerHTML = html;
 }
 
+// ============================================================
+// YORUMLAMA MOTORU
+// ============================================================
+const SUN_TEXT = {
+    'Koç': 'Öncü, cesur ve enerjik bir özünüz var. Harekete geçmek, başlatmak ve liderlik etmek doğanızda. Sabırsızlığa dikkat.',
+    'Boğa': 'Sabırlı, kararlı ve güvenilir bir özünüz var. Konfor, istikrar ve somut sonuçlar sizin için önemli. İnatçılığa dikkat.',
+    'İkizler': 'Meraklı, zeki ve iletişimi güçlü bir özünüz var. Öğrenmek ve paylaşmak sizi besler. Dağınıklığa dikkat.',
+    'Yengeç': 'Duygusal, koruyucu ve sezgisel bir özünüz var. Aile ve güvenlik duygusu merkezinizde. Aşırı hassasiyete dikkat.',
+    'Aslan': 'Yaratıcı, cömert ve karizmatik bir özünüz var. Görünmek ve takdir edilmek sizi motive eder. Egoya dikkat.',
+    'Başak': 'Analitik, titiz ve yardımsever bir özünüz var. Detaylar ve düzen sizin gücünüz. Aşırı eleştirelliğe dikkat.',
+    'Terazi': 'Uyumlu, adil ve estetik bir özünüz var. İlişkiler ve denge yaşamınızın teması. Kararsızlığa dikkat.',
+    'Akrep': 'Tutkulu, derin ve dönüştürücü bir özünüz var. Gizli olanı görme gücünüz yüksek. Kontrol ihtiyacına dikkat.',
+    'Yay': 'Özgür, iyimser ve felsefi bir özünüz var. Keşif ve anlam arayışı sizi büyütür. Aşırıya kaçmaya dikkat.',
+    'Oğlak': 'Disiplinli, hırslı ve sorumluluk sahibi bir özünüz var. Uzun vadeli hedefler sizin alanınız. Katılığa dikkat.',
+    'Kova': 'Özgün, yenilikçi ve insancıl bir özünüz var. Farklı düşünmek ve topluma katkı sizi tanımlar. Mesafeliliğe dikkat.',
+    'Balık': 'Şefkatli, hayalperest ve sezgisel bir özünüz var. Sanat ve maneviyat sizi besler. Sınır koymayı öğrenin.'
+};
+
+const MOON_TEXT = {
+    'Koç': 'Duygularınız hızlı alevlenir ve hızla söner. Anlık tepkilere dikkat edin.',
+    'Boğa': 'Duygusal güvenlik ve istikrar ararsınız. Sakin ama değişime dirençli bir iç dünyanız var.',
+    'İkizler': 'Duygularınızı konuşarak işlersiniz. Zihinsel uyarılma duygusal ihtiyacınızdır.',
+    'Yengeç': 'Ay kendi burcunda: duyguları derin yaşarsınız, güçlü sezgi ve koruma içgüdüsü taşırsınız.',
+    'Aslan': 'Duygusal olarak takdir edilmeye ihtiyaç duyarsınız. Sıcak ve dramatik bir iç dünyanız var.',
+    'Başak': 'Duygularınızı analiz edersiniz. Hizmet etmek ve faydalı olmak sizi duygusal olarak besler.',
+    'Terazi': 'Duygusal dengeniz ilişkilerinize bağlıdır. Uyum ve ortaklık iç huzurunuzun anahtarı.',
+    'Akrep': 'Duyguları yoğun ve derin yaşarsınız. Güven sizin için her şeydir; ihanet affedilmez.',
+    'Yay': 'Duygusal özgürlüğe ihtiyacınız var. İyimserlik ve macera iç dünyanızı canlı tutar.',
+    'Oğlak': 'Duygularınızı kontrollü gösterirsiniz. Başarı ve saygınlık duygusal güvenlik kaynağınız.',
+    'Kova': 'Duygulara mesafeli, akılcı yaklaşırsınız. Özgürlük ve dostluk duygusal ihtiyaçlarınızdır.',
+    'Balık': 'Empatiniz sınırsızdır; başkalarının duygularını da hissedersiniz. Kendinize alan bırakın.'
+};
+
+const ASC_TEXT = {
+    'Koç': 'Dışarıya enerjik, girişken ve dinamik görünürsünüz. İlk izleniminiz: cesaret.',
+    'Boğa': 'Dışarıya sakin, güvenilir ve dirençli görünürsünüz. İlk izleniminiz: huzur.',
+    'İkizler': 'Dışarıya konuşkan, esprili ve hareketli görünürsünüz. İlk izleniminiz: zekâ.',
+    'Yengeç': 'Dışarıya sıcak, koruyucu ve duygusal görünürsünüz. İlk izleniminiz: samimiyet.',
+    'Aslan': 'Dışarıya karizmatik, gururlu ve parlak görünürsünüz. İlk izleniminiz: özgüven.',
+    'Başak': 'Dışarıya düzenli, dikkatli ve mütevazı görünürsünüz. İlk izleniminiz: zarafet.',
+    'Terazi': 'Dışarıya kibar, çekici ve dengeli görünürsünüz. İlk izleniminiz: uyum.',
+    'Akrep': 'Dışarıya gizemli, yoğun ve etkileyici görünürsünüz. İlk izleniminiz: derinlik.',
+    'Yay': 'Dışarıya neşeli, açık sözlü ve maceracı görünürsünüz. İlk izleniminiz: iyimserlik.',
+    'Oğlak': 'Dışarıya ciddi, olgun ve güvenilir görünürsünüz. İlk izleniminiz: otorite.',
+    'Kova': 'Dışarıya özgün, farklı ve bağımsız görünürsünüz. İlk izleniminiz: sıra dışılık.',
+    'Balık': 'Dışarıya yumuşak, sanatsal ve dalgın görünürsünüz. İlk izleniminiz: gizem.'
+};
+
+const HOUSE_THEMES = [
+    'kimlik, beden ve kişisel duruş',
+    'para, değerler ve öz kaynaklar',
+    'iletişim, kardeşler ve yakın çevre',
+    'ev, aile ve kökler',
+    'aşk, yaratıcılık ve çocuklar',
+    'sağlık, iş rutini ve hizmet',
+    'evlilik, ortaklıklar ve açık düşmanlar',
+    'dönüşüm, ortak kaynaklar ve derin bağlar',
+    'yüksek öğrenim, inançlar ve uzak yolculuklar',
+    'kariyer, statü ve yaşam hedefi',
+    'arkadaşlar, gruplar ve idealler',
+    'bilinçaltı, inziva ve gizli konular'
+];
+
+const PLANET_ROLES = {
+    sun: 'yaşam enerjiniz ve egonuz',
+    moon: 'duygularınız ve iç dünyanız',
+    mercury: 'zihniniz ve iletişim tarzınız',
+    venus: 'sevgi diliniz ve estetik anlayışınız',
+    mars: 'mücadele gücünüz ve arzularınız',
+    jupiter: 'şansınız ve büyüme alanınız',
+    saturn: 'derslerinizin ve disiplinin alanı',
+    uranus: 'özgürlük ve yenilik ihtiyacınız',
+    neptune: 'hayalleriniz ve sezgileriniz',
+    pluto: 'dönüşüm gücünüz'
+};
+
+const ASPECT_MEANING = {
+    'Kavuşum': 'enerjileri birleşir ve birbirini güçlendirir',
+    'Karşıtlık': 'arasında denge kurmanız gereken bir gerilim vardır',
+    'Üçgen': 'arasında doğal ve akıcı bir uyum vardır',
+    'Kare': 'arasında sizi büyüten zorlayıcı bir sürtüşme vardır',
+    'Altmışlık': 'arasında değerlendirilmeyi bekleyen bir fırsat vardır'
+};
+
+function fillInterpretation(c) {
+    const sunSign = SIGNS[Math.floor(c.positions.sun.lon / 30)].name;
+    const moonSign = SIGNS[Math.floor(c.positions.moon.lon / 30)].name;
+    const ascSign = SIGNS[Math.floor(c.asc / 30)].name;
+    
+    let html = '';
+    
+    // Büyük üçlü
+    html += `<div class="r-card gold"><h4>☉ Güneş ${SIGNS[Math.floor(c.positions.sun.lon / 30)].symbol} ${sunSign} (${c.positions.sun.house}. ev)</h4><p>${SUN_TEXT[sunSign]}</p><p>Güneşiniz ${c.positions.sun.house}. evde: ${HOUSE_THEMES[c.positions.sun.house - 1]} alanında parlarsınız.</p></div>`;
+    html += `<div class="r-card blue"><h4>☽ Ay ${SIGNS[Math.floor(c.positions.moon.lon / 30)].symbol} ${moonSign} (${c.positions.moon.house}. ev)</h4><p>${MOON_TEXT[moonSign]}</p><p>Ayınız ${c.positions.moon.house}. evde: duygusal doyumu ${HOUSE_THEMES[c.positions.moon.house - 1]} alanında ararsınız.</p></div>`;
+    html += `<div class="r-card"><h4>⬆️ Yükselen ${SIGNS[Math.floor(c.asc / 30)].symbol} ${ascSign}</h4><p>${ASC_TEXT[ascSign]}</p></div>`;
+    
+    // Diğer gezegenler
+    let planetsHtml = '';
+    for (const key of ['mercury', 'venus', 'mars', 'jupiter', 'saturn']) {
+        const p = c.positions[key];
+        const sign = SIGNS[Math.floor(p.lon / 30)];
+        planetsHtml += `<p><strong style="color:${PLANETS[key].color}">${PLANETS[key].symbol} ${PLANETS[key].name}</strong> ${sign.symbol} ${sign.name} / ${p.house}. evde — ${PLANET_ROLES[key]}, ${HOUSE_THEMES[p.house - 1]} alanında kendini gösterir.${p.retro ? ' (Retro: içsel/gecikmeli işler)' : ''}</p>`;
+    }
+    html += `<div class="r-card"><h4>🪐 Kişisel Gezegenler</h4>${planetsHtml}</div>`;
+    
+    // Önemli aspectler
+    let aspHtml = '';
+    c.aspects.slice(0, 8).forEach(a => {
+        aspHtml += `<p><strong style="color:${a.type.color}">${PLANETS[a.p1].symbol} ${a.type.symbol} ${PLANETS[a.p2].symbol}</strong> ${PLANETS[a.p1].name} ile ${PLANETS[a.p2].name} ${ASPECT_MEANING[a.type.name]} (orb ${a.orb.toFixed(1)}°).</p>`;
+    });
+    if (aspHtml) html += `<div class="r-card red"><h4>⭐ Önemli Aspectler</h4>${aspHtml}</div>`;
+    
+    document.getElementById('interpretation-content').innerHTML = html;
+}
+
+// ============================================================
+// GÜNLÜK FAL (bugünün transitleri)
+// ============================================================
+const MOON_DAILY = {
+    'Koç': 'Bugün enerji yüksek — hızlı kararlar ve yeni başlangıçlar için uygun ama acele kavgaya dönüşmesin.',
+    'Boğa': 'Bugün sakinlik ve konfor günü — pratik işler, güzel yemekler ve finansal kararlar destekleniyor.',
+    'İkizler': 'Bugün iletişim günü — mesajlar, görüşmeler ve öğrenme faaliyetleri hızlanıyor.',
+    'Yengeç': 'Bugün duygular yüzeyde — ev, aile ve yakınlarınızla vakit iyileştirici olur.',
+    'Aslan': 'Bugün sahne sizin — yaratıcılık, eğlence ve görünürlük için harika bir gün.',
+    'Başak': 'Bugün düzen günü — detay işleri, sağlık rutinleri ve temizlik için verimli bir gün.',
+    'Terazi': 'Bugün ilişkiler öne çıkıyor — uzlaşma, estetik ve sosyal bağlantılar destekleniyor.',
+    'Akrep': 'Bugün derin duygular günü — araştırma, yüzleşme ve dönüşüm için güçlü bir enerji var.',
+    'Yay': 'Bugün ufuk genişliyor — seyahat, öğrenim ve iyimser planlar için ideal.',
+    'Oğlak': 'Bugün iş günü — hedefler, sorumluluklar ve kariyer adımları destekleniyor.',
+    'Kova': 'Bugün özgürlük günü — arkadaşlar, topluluklar ve yenilikçi fikirler öne çıkıyor.',
+    'Balık': 'Bugün sezgiler güçlü — dinlenme, sanat ve manevi konular için akış günü.'
+};
+
+const TRANSIT_ASPECT_TEXT = {
+    'Kavuşum': 'gündeminize güçlü şekilde giriyor',
+    'Karşıtlık': 'alanında bir denge sınavı yaratıyor',
+    'Üçgen': 'alanına destek ve kolaylık getiriyor',
+    'Kare': 'alanında harekete zorlayan bir baskı oluşturuyor',
+    'Altmışlık': 'alanında değerlendirebileceğiniz bir fırsat sunuyor'
+};
+
+function fillDaily(c) {
+    const now = new Date();
+    const jdNow = julianDate(now);
+    
+    // Bugünkü transit pozisyonları
+    const transits = {};
+    for (const key of Object.keys(PLANETS)) {
+        transits[key] = geoLongitude(key, jdNow);
+    }
+    
+    const moonSign = SIGNS[Math.floor(transits.moon / 30)];
+    const sunSign = SIGNS[Math.floor(transits.sun / 30)];
+    
+    // Transit -> natal aspectler (dar orb)
+    const hits = [];
+    for (const tKey of Object.keys(transits)) {
+        for (const nKey of Object.keys(c.positions)) {
+            let diff = Math.abs(transits[tKey] - c.positions[nKey].lon);
+            if (diff > 180) diff = 360 - diff;
+            for (const asp of ASPECT_TYPES) {
+                const orb = Math.abs(diff - asp.angle);
+                const maxOrb = (tKey === 'moon') ? 4 : 2.5;
+                if (orb <= maxOrb) {
+                    hits.push({ t: tKey, n: nKey, asp: asp, orb: orb });
+                    break;
+                }
+            }
+        }
+    }
+    hits.sort((a, b) => a.orb - b.orb);
+    
+    // Enerji skoru
+    let good = 0, hard = 0;
+    hits.forEach(h => {
+        if (h.asp.name === 'Üçgen' || h.asp.name === 'Altmışlık') good++;
+        else if (h.asp.name === 'Kare' || h.asp.name === 'Karşıtlık') hard++;
+        else good += 0.5;
+    });
+    const score = Math.max(1, Math.min(5, Math.round(3 + (good - hard) * 0.7)));
+    const stars = '⭐'.repeat(score) + '☆'.repeat(5 - score);
+    
+    const dateStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+    
+    let html = `<div class="daily-date">📅 ${dateStr}</div>`;
+    html += `<div class="r-card gold"><h4>Günün Enerjisi</h4><p class="daily-stars">${stars}</p><p>Gökyüzünde Güneş ${sunSign.symbol} ${sunSign.name}, Ay ${moonSign.symbol} ${moonSign.name} burcunda ilerliyor.</p></div>`;
+    html += `<div class="r-card blue"><h4>🌙 Ay ${moonSign.symbol} ${moonSign.name} burcunda</h4><p>${MOON_DAILY[moonSign.name]}</p></div>`;
+    
+    // Kişiye özel transitler
+    let transitHtml = '';
+    hits.slice(0, 6).forEach(h => {
+        const natalHouse = c.positions[h.n].house;
+        transitHtml += `<p><strong style="color:${h.asp.color}">${PLANETS[h.t].symbol} ${h.asp.symbol} ${PLANETS[h.n].symbol}</strong> Transit ${PLANETS[h.t].name}, natal ${PLANETS[h.n].name}'inize ${h.asp.name.toLowerCase()} yapıyor — ${PLANET_ROLES[h.n]} (${natalHouse}. ev: ${HOUSE_THEMES[natalHouse - 1]}) ${TRANSIT_ASPECT_TEXT[h.asp.name]}.</p>`;
+    });
+    if (transitHtml) {
+        html += `<div class="r-card"><h4>🎯 Size Özel Bugünün Transitleri</h4>${transitHtml}</div>`;
+    } else {
+        html += `<div class="r-card"><h4>🎯 Size Özel Bugünün Transitleri</h4><p>Bugün haritanıza dar açı yapan önemli bir transit yok — sakin ve nötr bir gökyüzü.</p></div>`;
+    }
+    
+    // Tavsiye
+    const advice = score >= 4
+        ? 'Gökyüzü sizi destekliyor: yeni adımlar atmak, görüşmeler yapmak ve fırsatları değerlendirmek için güzel bir gün.'
+        : score >= 3
+        ? 'Dengeli bir gün: rutin işlerinizi sürdürün, büyük kararları aceleye getirmeyin.'
+        : 'Zorlayıcı enerjiler mevcut: bugün sabırlı olun, çatışmalardan uzak durun ve kendinize zaman ayırın.';
+    html += `<div class="r-card red"><h4>💡 Günün Tavsiyesi</h4><p>${advice}</p></div>`;
+    
+    document.getElementById('daily-content').innerHTML = html;
+}
+
+// ============================================================
+// ASTRO CHAT (ChatGPT API + yerel yedek)
+// ============================================================
+const chatHistory = [];
+
+function chartSummaryText() {
+    if (!chart) return 'Harita henüz hesaplanmadı.';
+    const c = chart;
+    let s = `Doğum: ${c.dateVal} ${c.timeVal}, ${c.city}. `;
+    s += `Yükselen: ${fmtZodiac(c.asc)}. MC: ${fmtZodiac(c.mc)}. `;
+    for (const key of Object.keys(c.positions)) {
+        const p = c.positions[key];
+        s += `${PLANETS[key].name}: ${fmtZodiac(p.lon)} ${p.house}. evde${p.retro ? ' (R)' : ''}. `;
+    }
+    s += 'Aspectler: ' + c.aspects.map(a => `${PLANETS[a.p1].name} ${a.type.name} ${PLANETS[a.p2].name}`).join(', ') + '.';
+    return s;
+}
+
+function addMsg(text, who) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + who;
+    div.textContent = text;
+    document.getElementById('chat-messages').appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth' });
+    return div;
+}
+
+// Yerel kural-tabanlı yanıtlar (API anahtarı yokken)
+function localBotAnswer(q) {
+    if (!chart) return 'Önce haritanı hesaplaman gerekiyor. Yukarıdaki formu doldur!';
+    const c = chart;
+    const ql = q.toLowerCase();
+    
+    const sunSign = SIGNS[Math.floor(c.positions.sun.lon / 30)].name;
+    const moonSign = SIGNS[Math.floor(c.positions.moon.lon / 30)].name;
+    const ascSign = SIGNS[Math.floor(c.asc / 30)].name;
+    
+    if (ql.includes('yükselen')) {
+        return `Yükselenin ${fmtZodiac(c.asc)}. ${ASC_TEXT[ascSign]}`;
+    }
+    if (ql.includes('güneş') || ql.includes('gunes') || ql.includes('burcum')) {
+        return `Güneşin ${fmtZodiac(c.positions.sun.lon)}, ${c.positions.sun.house}. evde. ${SUN_TEXT[sunSign]}`;
+    }
+    if (ql.includes('ay ') || ql.includes('ayım') || ql.includes('duygu')) {
+        return `Ayın ${fmtZodiac(c.positions.moon.lon)}, ${c.positions.moon.house}. evde. ${MOON_TEXT[moonSign]}`;
+    }
+    if (ql.includes('bugün') || ql.includes('günlük') || ql.includes('fal') || ql.includes('günüm')) {
+        document.querySelector('[data-tab="daily"]').click();
+        return 'Günlük falına baktım — "🌙 Günlük Fal" sekmesini açtım, oradan detayları görebilirsin! ✨';
+    }
+    if (ql.includes('aşk') || ql.includes('ask') || ql.includes('ilişki') || ql.includes('sevgili')) {
+        const venus = c.positions.venus;
+        const vSign = SIGNS[Math.floor(venus.lon / 30)].name;
+        return `Aşk hayatın için Venüs'üne baktım: ${fmtZodiac(venus.lon)}, ${venus.house}. evde. Sevgi dilin ${vSign} tarzında; ${HOUSE_THEMES[venus.house - 1]} alanında aşkı deneyimlersin.`;
+    }
+    if (ql.includes('kariyer') || ql.includes('iş') || ql.includes('para') || ql.includes('meslek')) {
+        const mcSign = SIGNS[Math.floor(c.mc / 30)].name;
+        return `Kariyerin için MC'ne baktım: ${fmtZodiac(c.mc)}. ${mcSign} MC'si kariyer yolunda bu burcun niteliklerini kullanmanı önerir. Satürn'ün ${c.positions.saturn.house}. evde — disiplin ve ustalaşma alanın: ${HOUSE_THEMES[c.positions.saturn.house - 1]}.`;
+    }
+    for (const key of Object.keys(PLANETS)) {
+        if (ql.includes(PLANETS[key].name.toLowerCase().replace('ü', 'u').replace('ö', 'o')) || ql.includes(PLANETS[key].name.toLowerCase())) {
+            const p = c.positions[key];
+            return `${PLANETS[key].name}: ${fmtZodiac(p.lon)}, ${p.house}. evde${p.retro ? ' (retro)' : ''}. Bu, ${PLANET_ROLES[key]} demektir ve ${HOUSE_THEMES[p.house - 1]} alanında etkindir.`;
+        }
+    }
+    if (ql.includes('ev')) {
+        return `Ev sistemin: ${c.hsys}. "🏠 Houses" sekmesinden tüm ev cusps'larını görebilirsin. Belirli bir gezegenin evini sormak istersen "Mars hangi evde?" gibi sorabilirsin.`;
+    }
+    if (ql.includes('merhaba') || ql.includes('selam')) {
+        return `Selam! 🌟 Haritan hazır: Güneş ${sunSign}, Ay ${moonSign}, Yükselen ${ascSign}. Bana aşk, kariyer, günlük fal veya herhangi bir gezegenini sorabilirsin!`;
+    }
+    return `Haritana göre: Güneş ${sunSign} (${c.positions.sun.house}. ev), Ay ${moonSign} (${c.positions.moon.house}. ev), Yükselen ${ascSign}. Daha detaylı yanıtlar için ⚙️ simgesinden OpenAI API anahtarı ekleyebilirsin. Şunları sorabilirsin: "aşk hayatım", "kariyerim", "bugün günüm nasıl?"`;
+}
+
+async function askGPT(question) {
+    const key = localStorage.getItem('openai_api_key');
+    
+    const messages = [
+        {
+            role: 'system',
+            content: 'Sen deneyimli, samimi bir Türk astrologsun. Kullanıcının doğum haritası verisi: ' +
+                     chartSummaryText() +
+                     ' Bugünün tarihi: ' + new Date().toLocaleDateString('tr-TR') +
+                     '. Kısa (en fazla 150 kelime), sıcak ve Türkçe yanıtlar ver. Emoji kullanabilirsin.'
+        },
+        ...chatHistory.slice(-6),
+        { role: 'user', content: question }
+    ];
+    
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + key
+        },
+        body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: messages,
+            max_tokens: 400,
+            temperature: 0.8
+        })
+    });
+    
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || ('API hatası: ' + res.status));
+    }
+    
+    const data = await res.json();
+    return data.choices[0].message.content;
+}
+
+async function handleChatSend() {
+    const input = document.getElementById('chat-input');
+    const q = input.value.trim();
+    if (!q) return;
+    
+    input.value = '';
+    addMsg(q, 'user');
+    chatHistory.push({ role: 'user', content: q });
+    
+    const typing = addMsg('Yıldızlara bakıyorum... ✨', 'bot');
+    typing.classList.add('typing');
+    
+    const hasKey = !!localStorage.getItem('openai_api_key');
+    
+    try {
+        let answer;
+        if (hasKey) {
+            answer = await askGPT(q);
+        } else {
+            await new Promise(r => setTimeout(r, 600));
+            answer = localBotAnswer(q);
+        }
+        typing.remove();
+        addMsg(answer, 'bot');
+        chatHistory.push({ role: 'assistant', content: answer });
+    } catch (e) {
+        typing.remove();
+        console.error('Chat hatası:', e);
+        addMsg('⚠️ ChatGPT bağlantısında sorun oluştu (' + e.message + '). Yerel bilgimle yanıtlıyorum:\n\n' + localBotAnswer(q), 'bot');
+    }
+}
+
+function initChat() {
+    const fab = document.getElementById('chat-fab');
+    const panel = document.getElementById('chat-panel');
+    
+    fab.addEventListener('click', () => panel.classList.toggle('open'));
+    document.getElementById('chat-close').addEventListener('click', () => panel.classList.remove('open'));
+    
+    document.getElementById('chat-settings').addEventListener('click', () => {
+        const row = document.getElementById('chat-key-row');
+        row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+        document.getElementById('api-key-input').value = localStorage.getItem('openai_api_key') || '';
+    });
+    
+    document.getElementById('api-key-save').addEventListener('click', () => {
+        const val = document.getElementById('api-key-input').value.trim();
+        if (val) {
+            localStorage.setItem('openai_api_key', val);
+            addMsg('✅ API anahtarı kaydedildi! Artık ChatGPT ile yanıt veriyorum.', 'bot');
+        } else {
+            localStorage.removeItem('openai_api_key');
+            addMsg('API anahtarı silindi. Yerel modda devam ediyorum.', 'bot');
+        }
+        document.getElementById('chat-key-row').style.display = 'none';
+    });
+    
+    document.getElementById('chat-send').addEventListener('click', handleChatSend);
+    document.getElementById('chat-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleChatSend();
+    });
+}
+
 // ---------- UI ----------
 function generateAll() {
     const c = computeChart();
@@ -761,6 +1147,8 @@ function generateAll() {
     fillAspects(c);
     fillHouses(c);
     fillDominants(c);
+    fillInterpretation(c);
+    fillDaily(c);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -791,6 +1179,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('🏠 Ev sistemi değişti:', document.getElementById('house-system').value);
         generateAll();
     });
+    
+    // Chatbot
+    initChat();
     
     // İlk yükleme
     generateAll();

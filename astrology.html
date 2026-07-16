@@ -3,18 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Chart - Doğum Haritası Hesaplayıcı</title>
-    <link rel="stylesheet" href="astrology.css?v=4.2.0">
+    <title>Astro Harita - Doğum Haritası, Yorum & Günlük Fal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="astrology.css?v=5.0.0">
 </head>
 <body>
-    <!-- Üst Bar (astro-seek stili) -->
+    <!-- Üst Bar -->
     <div class="top-bar">
-        <span class="top-bar-title">Birth Chart</span>
-        <span class="top-bar-sub">- Ücretsiz doğum haritası hesaplayıcı</span>
+        <div class="top-bar-inner">
+            <div>
+                <span class="top-bar-title">✨ Astro Harita</span>
+                <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
+            </div>
+            <span class="badge">v5.0.0</span>
+        </div>
     </div>
 
     <div class="page">
-        <!-- Edit data linki + Ev Sistemi seçici -->
+        <!-- Kontrol satırı -->
         <div class="edit-link-row">
             <a href="#" id="edit-toggle">✏️ <span>Bilgileri düzenle</span></a>
             <span class="hsys-picker">
@@ -31,7 +38,7 @@
             </span>
         </div>
 
-        <!-- Doğum Bilgileri Formu (gizli başlar) -->
+        <!-- Doğum Bilgileri Formu -->
         <div class="birth-form" id="birth-form" style="display:none;">
             <div class="form-grid">
                 <div>
@@ -58,7 +65,7 @@
                     </select>
                 </div>
             </div>
-            <button id="calc-btn" class="calc-btn">Haritayı Hesapla</button>
+            <button id="calc-btn" class="calc-btn">✨ Haritayı Hesapla</button>
         </div>
 
         <!-- Bilgi Tablosu -->
@@ -74,11 +81,13 @@
 
         <!-- Sekmeler -->
         <div class="tabs">
-            <button class="tab active" data-tab="chart">Chart</button>
-            <button class="tab" data-tab="aspects">Aspects</button>
-            <button class="tab" data-tab="positions">Positions</button>
-            <button class="tab" data-tab="houses">Houses</button>
-            <button class="tab" data-tab="dominants">Dominants</button>
+            <button class="tab active" data-tab="chart">🌀 Chart</button>
+            <button class="tab" data-tab="yorum">🔮 Yorum</button>
+            <button class="tab" data-tab="daily">🌙 Günlük Fal</button>
+            <button class="tab" data-tab="aspects">⭐ Aspects</button>
+            <button class="tab" data-tab="positions">🪐 Positions</button>
+            <button class="tab" data-tab="houses">🏠 Houses</button>
+            <button class="tab" data-tab="dominants">📊 Dominants</button>
         </div>
 
         <!-- Sekme İçerikleri -->
@@ -86,6 +95,14 @@
             <div class="chart-holder">
                 <canvas id="wheel" width="740" height="740"></canvas>
             </div>
+        </div>
+
+        <div class="tab-content" id="tab-yorum">
+            <div id="interpretation-content" class="reading"></div>
+        </div>
+
+        <div class="tab-content" id="tab-daily">
+            <div id="daily-content" class="reading"></div>
         </div>
 
         <div class="tab-content" id="tab-aspects">
@@ -113,10 +130,32 @@
             <div id="dominants-content"></div>
         </div>
 
-        <!-- Alt bilgi -->
-        <div class="footer-pill">KUBEY Astroloji v4.2.0</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.0.0</div>
     </div>
 
-    <script src="astrology.js?v=4.2.0"></script>
+    <!-- Chatbot -->
+    <button id="chat-fab" title="Astro Chat">🔮</button>
+    <div id="chat-panel">
+        <div class="chat-header">
+            <span>🔮 Astro Chat</span>
+            <span>
+                <button id="chat-settings" title="API Anahtarı">⚙️</button>
+                <button id="chat-close" title="Kapat">✕</button>
+            </span>
+        </div>
+        <div class="chat-key-row" id="chat-key-row" style="display:none;">
+            <input type="password" id="api-key-input" placeholder="OpenAI API anahtarı (sk-...)">
+            <button id="api-key-save">Kaydet</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="msg bot">Merhaba! 🌟 Ben Astro Chat. Doğum haritan hakkında soru sorabilirsin: "Yükselenim ne?", "Güneşim hangi evde?", "Bugün günüm nasıl geçecek?" gibi. ⚙️ simgesinden OpenAI API anahtarı eklersen ChatGPT ile daha detaylı yanıt veririm!</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Sorunu yaz...">
+            <button id="chat-send">➤</button>
+        </div>
+    </div>
+
+    <script src="astrology.js?v=5.0.0"></script>
 </body>
 </html>
