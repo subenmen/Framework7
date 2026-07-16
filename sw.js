@@ -1,10 +1,10 @@
-// KUBEY Astroloji Service Worker - v5.7.1
-const CACHE_NAME = 'astro-v5.7.1';
+// KUBEY Astroloji Service Worker - v5.8.0
+const CACHE_NAME = 'astro-v5.8.0';
 
 const PRECACHE = [
     './astrology.html',
-    './astrology.css?v=5.7.1',
-    './astrology.js?v=5.7.1',
+    './astrology.css?v=5.8.0',
+    './astrology.js?v=5.8.0',
     './manifest.json',
     './icon-192.png',
     './icon-512.png'

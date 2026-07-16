@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="astrology.css?v=5.7.1">
+    <link rel="stylesheet" href="astrology.css?v=5.8.0">
 </head>
 <body>
     <!-- Üst Bar -->
@@ -22,7 +22,7 @@
                 <span class="top-bar-title">✨ Astro Harita</span>
                 <span class="top-bar-sub">Doğum haritası · Yorum · Günlük fal</span>
             </div>
-            <span class="badge">v5.7.1</span>
+            <span class="badge">v5.8.0</span>
         </div>
     </div>
 
@@ -174,6 +174,15 @@
         </div>
 
         <div class="tab-content" id="tab-aspects">
+            <div class="grid-section">
+                <h4 class="grid-title">🔺 Açı Matrisi (Aspectarian)</h4>
+                <p class="grid-note">Klasik harita çıktılarındaki üçgen tablo: her hücre, satır ve sütundaki iki gezegen arasındaki açıyı gösterir. AC (Yükselen) ve MC dahildir.</p>
+                <div class="aspect-grid-wrap">
+                    <table class="aspect-grid" id="aspect-grid"></table>
+                </div>
+                <div class="grid-legend" id="grid-legend"></div>
+            </div>
+            <h4 class="grid-title">📋 Açı Listesi</h4>
             <table class="data-table" id="aspects-table">
                 <thead><tr><th>Gezegen</th><th>Aspect</th><th>Gezegen</th><th>Orb</th></tr></thead>
                 <tbody></tbody>
@@ -198,7 +207,7 @@
             <div id="dominants-content"></div>
         </div>
 
-        <div class="footer-pill">✨ KUBEY Astroloji v5.7.1</div>
+        <div class="footer-pill">✨ KUBEY Astroloji v5.8.0</div>
     </div>
 
     <!-- Chatbot -->
@@ -224,6 +233,6 @@
         </div>
     </div>
 
-    <script src="astrology.js?v=5.7.1"></script>
+    <script src="astrology.js?v=5.8.0"></script>
 </body>
 </html>

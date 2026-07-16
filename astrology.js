@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.7.1 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.7.1 yükleniyor...');
+// KUBEY Astroloji v5.8.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.8.0 yükleniyor...');
 
-const APP_VERSION = '5.7.1';
+const APP_VERSION = '5.8.0';
 
 const DEG = Math.PI / 180;
 
@@ -917,6 +917,66 @@ function fillPositions(c) {
             <td>${fmtDegMin(lon)}</td>
             <td>${house}</td>
         </tr>`;
+    }
+}
+
+// Astrodienst tarzı üçgen açı matrisi (aspectarian).
+// Majör açılara ek olarak matriste minör açılar da gösterilir (listeyi/çarkı etkilemez).
+const GRID_MINOR_ASPECTS = [
+    { name: 'Yüzellilik (Quincunx)', symbol: '⚻', angle: 150, orb: 3, color: '#2e8b57' },
+    { name: 'Yarım Altmışlık', symbol: '⚺', angle: 30, orb: 2, color: '#2e8b57' },
+    { name: 'Yarım Kare', symbol: '∠', angle: 45, orb: 2, color: '#b05a2a' },
+    { name: 'Birbuçuk Kare', symbol: '⚼', angle: 135, orb: 2, color: '#b05a2a' }
+];
+
+function gridAspectBetween(lon1, lon2) {
+    let diff = Math.abs(lon1 - lon2);
+    if (diff > 180) diff = 360 - diff;
+    for (const asp of ASPECT_TYPES) {
+        const orb = Math.abs(diff - asp.angle);
+        if (orb <= asp.orb) return { type: asp, orb };
+    }
+    for (const asp of GRID_MINOR_ASPECTS) {
+        const orb = Math.abs(diff - asp.angle);
+        if (orb <= asp.orb) return { type: asp, orb };
+    }
+    return null;
+}
+
+function fillAspectGrid(c) {
+    const table = document.getElementById('aspect-grid');
+    if (!table) return;
+    
+    const bodies = Object.keys(PLANETS).map(k => ({
+        key: k, name: PLANETS[k].name, symbol: PLANETS[k].symbol, color: PLANETS[k].color, lon: c.positions[k].lon
+    }));
+    bodies.push({ key: 'asc', name: 'Yükselen', symbol: 'AC', color: '#111', lon: c.asc });
+    bodies.push({ key: 'mc', name: 'Gökyüzü Ortası', symbol: 'MC', color: '#111', lon: c.mc });
+    
+    let html = '';
+    for (let i = 0; i < bodies.length; i++) {
+        html += '<tr>';
+        for (let j = 0; j < i; j++) {
+            const a = gridAspectBetween(bodies[i].lon, bodies[j].lon);
+            if (a) {
+                html += `<td class="ag-cell" title="${bodies[i].name} ${a.type.name} ${bodies[j].name} (orb ${a.orb.toFixed(1)}°)">
+                    <span class="ag-sym" style="color:${a.type.color}">${a.type.symbol}</span>
+                    <span class="ag-orb">${a.orb.toFixed(1)}</span></td>`;
+            } else {
+                html += '<td class="ag-cell empty"></td>';
+            }
+        }
+        html += `<td class="ag-diag" title="${bodies[i].name}"><span style="color:${bodies[i].color}">${bodies[i].symbol}</span></td>`;
+        html += '</tr>';
+    }
+    table.innerHTML = html;
+    
+    // Lejant: majör + minör açı sembolleri
+    const legend = document.getElementById('grid-legend');
+    if (legend) {
+        legend.innerHTML = [...ASPECT_TYPES, ...GRID_MINOR_ASPECTS].map(a =>
+            `<span class="gl-item"><span class="ag-sym" style="color:${a.color}">${a.symbol}</span> ${a.name} (${a.angle}°)</span>`
+        ).join('');
     }
 }
 
@@ -2631,6 +2691,7 @@ function generateAll() {
     drawWheel(c);
     fillPositions(c);
     fillAspects(c);
+    fillAspectGrid(c);
     fillHouses(c);
     fillDominants(c);
     fillInterpretation(c);

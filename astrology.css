@@ -407,6 +407,86 @@ body {
 
 .data-table tr:nth-child(even) { background: #faf9ff; }
 
+/* ============ AÇI MATRİSİ (ASPECTARIAN) ============ */
+.grid-section { margin-bottom: 22px; }
+
+.grid-title {
+    font-size: 14px;
+    color: #4a2580;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.grid-note {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.aspect-grid-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+}
+
+.aspect-grid {
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.aspect-grid td {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #e2ddf5;
+    padding: 0;
+    line-height: 1.05;
+}
+
+.aspect-grid .ag-cell { background: white; }
+.aspect-grid .ag-cell.empty { background: #fbfaff; }
+
+.aspect-grid .ag-sym {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.aspect-grid .ag-orb {
+    display: block;
+    font-size: 8.5px;
+    color: #999;
+}
+
+.aspect-grid .ag-diag {
+    background: linear-gradient(135deg, #f4f0ff, #ece5fc);
+    font-size: 15px;
+    font-weight: 700;
+    border: 1px solid #cfc4ef;
+}
+
+.grid-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 12px;
+    font-size: 11.5px;
+    color: #666;
+    justify-content: center;
+}
+
+.grid-legend .gl-item { white-space: nowrap; }
+.grid-legend .ag-sym { display: inline; font-size: 13px; }
+
+@media (max-width: 480px) {
+    .aspect-grid td { width: 28px; height: 30px; min-width: 28px; }
+    .aspect-grid .ag-sym { font-size: 13px; }
+    .aspect-grid .ag-orb { font-size: 7.5px; }
+}
+
 /* Yorum & Günlük Fal */
 .reading { padding: 4px 8px; }
 
