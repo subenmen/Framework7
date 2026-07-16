@@ -1,7 +1,7 @@
-// KUBEY Astroloji v5.3.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
-console.log('🌟 Astroloji v5.3.0 yükleniyor...');
+// KUBEY Astroloji v5.4.0 - Kısa/Detaylı yorum + Günlük/Haftalık/Aylık fal + Sinastri + Transitler + PWA
+console.log('🌟 Astroloji v5.4.0 yükleniyor...');
 
-const APP_VERSION = '5.3.0';
+const APP_VERSION = '5.4.0';
 
 const DEG = Math.PI / 180;
 
@@ -1095,6 +1095,75 @@ const TRANSIT_ASPECT_TEXT = {
     'Altmışlık': 'alanında değerlendirebileceğiniz bir fırsat sunuyor'
 };
 
+const TRANSIT_ADVICE = {
+    'Üçgen': 'Akışa güvenin ve bu desteği aktif olarak kullanın.',
+    'Altmışlık': 'Küçük bir bilinçli adım atarsanız bu kapı açılır.',
+    'Kavuşum': 'Bu tema bugün gündeminizin merkezinde — enerjiyi bilinçli yönetin.',
+    'Kare': 'Aceleci tepki vermek yerine bu gerilimi somut bir işe yönlendirin.',
+    'Karşıtlık': 'Karşınızdakinin aynasına bakın; orta yolu bulmaya çalışın.'
+};
+
+const DO_BY_PLANET = {
+    sun: 'Kendinizi gösterin — görünür olacağınız işlere öncelik verin',
+    moon: 'Duygularınızı paylaşın, sevdiklerinizle vakit geçirin',
+    mercury: 'Önemli görüşmeleri, yazışmaları ve sunumları bugün yapın',
+    venus: 'Romantik bir adım atın; estetik ve keyifli işlere yönelin',
+    mars: 'Spor yapın, cesur girişimlerde bulunun — enerjiniz yüksek',
+    jupiter: 'Başvuru yapın, fırsatları değerlendirin — şans kapısı aralık',
+    saturn: 'Plan yapın, uzun vadeli işlerinizi yapılandırın',
+    uranus: 'Yeni bir şey deneyin, rutini kırın',
+    neptune: 'Sanata, meditasyona ve sezgilerinize alan açın',
+    pluto: 'Derin bir temizlik veya dönüşüm başlatın'
+};
+
+const AVOID_BY_PLANET = {
+    sun: 'Ego çatışmalarına girmekten kaçının',
+    moon: 'Alınganlıktan ve ani duygusal tepkilerden kaçının',
+    mercury: 'Yanlış anlaşılmaya açık mesajlardan ve önemli imzalardan kaçının',
+    venus: 'Aşırı harcamadan ve ilişki tartışmalarından kaçının',
+    mars: 'Acelecilikten, kavgadan ve riskli fiziksel işlerden kaçının',
+    jupiter: 'Aşırı vaatte bulunmaktan ve abartıdan kaçının',
+    saturn: 'Kendinizi aşırı yüklemekten ve karamsarlığa kapılmaktan kaçının',
+    uranus: 'Ani ve geri dönüşü olmayan kararlardan kaçının',
+    neptune: 'Belirsiz anlaşmalardan ve kaçış davranışlarından uzak durun',
+    pluto: 'Güç savaşlarından ve inatlaşmadan uzak durun'
+};
+
+const LUCKY_STONE = {
+    'Koç': 'kırmızı jasper', 'Boğa': 'gül kuvars', 'İkizler': 'akik', 'Yengeç': 'aytaşı',
+    'Aslan': 'sitrin', 'Başak': 'yeşim', 'Terazi': 'opal', 'Akrep': 'obsidyen',
+    'Yay': 'turkuaz', 'Oğlak': 'oniks', 'Kova': 'ametist', 'Balık': 'akuamarin'
+};
+
+const LUCKY_COLOR = {
+    fire: 'kırmızı ve turuncu tonları',
+    earth: 'yeşil ve toprak tonları',
+    air: 'sarı ve açık mavi tonları',
+    water: 'lacivert ve deniz mavisi tonları'
+};
+
+// Önümüzdeki 24 saatte Ay'ın natal gezegenlere yaptığı kesin açılar (saatleriyle)
+function moonAspectTimes(c, jdStart) {
+    const events = [];
+    for (const nKey of Object.keys(c.positions)) {
+        for (const asp of ASPECT_TYPES) {
+            let minOrb = 99, minH = -1;
+            for (let h = 0; h <= 24; h++) {
+                const mLon = geoLongitude('moon', jdStart + h / 24);
+                let diff = Math.abs(mLon - c.positions[nKey].lon);
+                if (diff > 180) diff = 360 - diff;
+                const orb = Math.abs(diff - asp.angle);
+                if (orb < minOrb) { minOrb = orb; minH = h; }
+            }
+            // Tepe nokta pencere içinde olmalı (sınırda değil)
+            if (minOrb <= 1.0 && minH > 0 && minH < 24) {
+                events.push({ n: nKey, asp: asp, jd: jdStart + minH / 24, orb: minOrb });
+            }
+        }
+    }
+    return events.sort((a, b) => a.jd - b.jd).slice(0, 6);
+}
+
 // ============================================================
 // AY FAZLARI
 // ============================================================
@@ -1184,27 +1253,120 @@ function fillDaily(c) {
             🌕 Sonraki Dolunay: <strong>${nextFull ? fmtTrDate(jdToDate(nextFull)) : '-'}</strong></p>
         </div>
     </div>`;
-    html += `<div class="r-card gold"><h4>Günün Enerjisi</h4><p class="daily-stars">${stars}</p><p>Gökyüzünde Güneş ${sunSign.symbol} ${sunSign.name}, Ay ${moonSign.symbol} ${moonSign.name} burcunda ilerliyor.</p></div>`;
-    html += `<div class="r-card blue"><h4>🌙 Ay ${moonSign.symbol} ${moonSign.name} burcunda</h4><p>${MOON_DAILY[moonSign.name]}</p></div>`;
     
-    // Kişiye özel transitler
+    // Günün enerjisi (destekleyici/zorlayıcı sayılarıyla)
+    const softCount = hits.filter(h => h.asp.name === 'Üçgen' || h.asp.name === 'Altmışlık').length;
+    const hardCount = hits.filter(h => h.asp.name === 'Kare' || h.asp.name === 'Karşıtlık').length;
+    const conjCount = hits.filter(h => h.asp.name === 'Kavuşum').length;
+    html += `<div class="r-card gold"><h4>⚡ Günün Enerjisi</h4><p class="daily-stars">${stars}</p>
+        <p>Bugün haritanıza dokunan <strong>${hits.length} transit</strong> var: ${softCount} destekleyici 💚, ${hardCount} zorlayıcı ❤️‍🔥, ${conjCount} kavuşum 🔗.</p>
+        <p>Gökyüzünde Güneş ${sunSign.symbol} ${sunSign.name}, Ay ${moonSign.symbol} ${moonSign.name} burcunda ilerliyor.</p></div>`;
+    
+    // Bugünün gökyüzü: tüm gezegenler + retrolar
+    const retroToday = [];
+    let skyHtml = '<div class="sky-grid">';
+    for (const key of Object.keys(PLANETS)) {
+        const lon = transits[key];
+        const s = SIGNS[Math.floor(lon / 30)];
+        const lonNext = geoLongitude(key, jdNow + 1);
+        const isRetro = key !== 'sun' && key !== 'moon' && norm360(lonNext - lon) > 180;
+        if (isRetro) retroToday.push(PLANETS[key].name);
+        skyHtml += `<span class="sky-item"><strong style="color:${PLANETS[key].color}">${PLANETS[key].symbol}</strong> ${PLANETS[key].name} <span style="color:${ELEMENT_COLORS[s.element]}">${s.symbol}</span> ${fmtDegMin(lon)}${isRetro ? ' ℞' : ''}</span>`;
+    }
+    skyHtml += '</div>';
+    skyHtml += retroToday.length
+        ? `<p>⚠️ <strong>Şu an retroda:</strong> ${retroToday.join(', ')} — bu alanlarda gecikme ve gözden geçirme temaları aktif.</p>`
+        : '<p>✅ Bugün hiçbir gezegen retroda değil — enerji ileri akıyor.</p>';
+    html += `<div class="r-card"><h4>🌌 Bugünün Gökyüzü</h4>${skyHtml}</div>`;
+    
+    // Ay'ın burcu + SİZİN evinizdeki konumu (günün kişisel odağı)
+    const moonHouse = findHouse(transits.moon, c.houses);
+    html += `<div class="r-card blue"><h4>🌙 Ay ${moonSign.symbol} ${moonSign.name} burcunda & sizin ${moonHouse}. evinizde</h4>
+        <p>${MOON_DAILY[moonSign.name]}</p>
+        <p><strong>🏠 Günün kişisel odağı:</strong> Ay bugün haritanızın ${moonHouse}. evinden geçiyor — ${HOUSE_THEMES[moonHouse - 1]}. ${HOUSE_DETAILS[moonHouse - 1]} Bugün duygusal pusulanız bu alana dönük.</p></div>`;
+    
+    // Önümüzdeki 24 saatin Ay açıları (saat saat)
+    const moonTimes = moonAspectTimes(c, jdNow);
+    if (moonTimes.length) {
+        let mtHtml = '';
+        const todayDate = now.getDate();
+        moonTimes.forEach(ev => {
+            const d = jdToDate(ev.jd);
+            const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' });
+            const tomorrow = d.getDate() !== todayDate ? 'yarın ' : '';
+            const hard = (ev.asp.name === 'Kare' || ev.asp.name === 'Karşıtlık');
+            mtHtml += `<p><span class="t-badge ${hard ? 'hard' : 'soft'}">${ev.asp.symbol}</span> <strong>~${tomorrow}${timeStr}</strong> — Ay, natal <strong style="color:${PLANETS[ev.n].color}">${PLANETS[ev.n].symbol} ${PLANETS[ev.n].name}</strong>'inize ${ev.asp.name.toLowerCase()} yapıyor: ${PLANET_ROLES[ev.n]} ${TRANSIT_ASPECT_TEXT[ev.asp.name]}. ${TRANSIT_ADVICE[ev.asp.name]}</p>`;
+        });
+        html += `<div class="r-card"><h4>⏰ Önümüzdeki 24 Saatin Ay Açıları</h4><p style="color:#888;font-size:12px">Ay hızlı hareket eder; bu saatler günün duygusal ritmini belirler (Türkiye saati).</p>${mtHtml}</div>`;
+    }
+    
+    // Günün alan skorları
+    const areaScoreDaily = (keys) => {
+        let good = 0, hard = 0;
+        hits.forEach(h => {
+            if (!keys.includes(h.t) && !keys.includes(h.n)) return;
+            if (h.asp.name === 'Üçgen' || h.asp.name === 'Altmışlık') good++;
+            else if (h.asp.name === 'Kavuşum') good += 0.5;
+            else hard++;
+        });
+        const total = good + hard;
+        return total ? Math.max(15, Math.min(95, Math.round(good / total * 100))) : 55;
+    };
+    html += '<div class="r-card gold"><h4>📊 Günün Alan Skorları</h4>';
+    [['❤️ Aşk', areaScoreDaily(['venus', 'moon']), '#e0507a'],
+     ['💼 İş & Kariyer', areaScoreDaily(['sun', 'saturn', 'jupiter']), '#7a5af5'],
+     ['💬 İletişim', areaScoreDaily(['mercury']), '#3a7bd5'],
+     ['⚡ Enerji', areaScoreDaily(['mars', 'sun']), '#e5a53a']].forEach(([label, val, color]) => {
+        html += `<div class="dom-bar">
+            <span class="dom-label" style="width:130px">${label}</span>
+            <div class="dom-track"><div class="dom-fill" style="width:${val}%;background:${color}"></div></div>
+            <span><strong>${val}%</strong></span>
+        </div>`;
+    });
+    html += '</div>';
+    
+    // Kişiye özel transitler (detaylı, tavsiyeli)
     let transitHtml = '';
-    hits.slice(0, 6).forEach(h => {
+    hits.slice(0, 8).forEach(h => {
         const natalHouse = c.positions[h.n].house;
-        transitHtml += `<p><strong style="color:${h.asp.color}">${PLANETS[h.t].symbol} ${h.asp.symbol} ${PLANETS[h.n].symbol}</strong> Transit ${PLANETS[h.t].name}, natal ${PLANETS[h.n].name}'inize ${h.asp.name.toLowerCase()} yapıyor — ${PLANET_ROLES[h.n]} (${natalHouse}. ev: ${HOUSE_THEMES[natalHouse - 1]}) ${TRANSIT_ASPECT_TEXT[h.asp.name]}.</p>`;
+        transitHtml += `<p><strong style="color:${h.asp.color}">${PLANETS[h.t].symbol} ${h.asp.symbol} ${PLANETS[h.n].symbol}</strong> Transit ${PLANETS[h.t].name}, natal ${PLANETS[h.n].name}'inize ${h.asp.name.toLowerCase()} yapıyor (orb ${h.orb.toFixed(1)}°) — ${PLANET_ROLES[h.n]} (${natalHouse}. ev: ${HOUSE_THEMES[natalHouse - 1]}) ${TRANSIT_ASPECT_TEXT[h.asp.name]}. <em>${TRANSIT_ADVICE[h.asp.name]}</em></p>`;
     });
     if (transitHtml) {
         html += `<div class="r-card"><h4>🎯 Size Özel Bugünün Transitleri</h4>${transitHtml}</div>`;
     } else {
-        html += `<div class="r-card"><h4>🎯 Size Özel Bugünün Transitleri</h4><p>Bugün haritanıza dar açı yapan önemli bir transit yok — sakin ve nötr bir gökyüzü.</p></div>`;
+        html += `<div class="r-card"><h4>🎯 Size Özel Bugünün Transitleri</h4><p>Bugün haritanıza dar açı yapan önemli bir transit yok — sakin ve nötr bir gökyüzü. Rutininize odaklanmak için ideal.</p></div>`;
     }
+    
+    // Bugün yap / bugün kaçın
+    const doItems = [], avoidItems = [];
+    hits.forEach(h => {
+        if (h.asp.name === 'Üçgen' || h.asp.name === 'Altmışlık' || h.asp.name === 'Kavuşum') {
+            const txt = DO_BY_PLANET[h.t];
+            if (txt && !doItems.includes(txt)) doItems.push(txt);
+        } else {
+            const txt = AVOID_BY_PLANET[h.t];
+            if (txt && !avoidItems.includes(txt)) avoidItems.push(txt);
+        }
+    });
+    if (!doItems.length) doItems.push('Sezgilerinizi dinleyin ve gününüzü akışına bırakın');
+    if (!avoidItems.length) avoidItems.push('Büyük kararları aceleye getirmekten kaçının');
+    html += `<div class="r-card"><h4>✅ Bugün Yap / ❌ Bugün Kaçın</h4>
+        ${doItems.slice(0, 4).map(t => `<p>✅ ${t}.</p>`).join('')}
+        ${avoidItems.slice(0, 4).map(t => `<p>❌ ${t}.</p>`).join('')}</div>`;
+    
+    // Şans unsurları (Ay burcuna göre)
+    const luckyNum = ((now.getDate() + Math.floor(transits.moon / 30)) % 9) + 1;
+    html += `<div class="r-card blue"><h4>🍀 Günün Şans Unsurları</h4>
+        <p>🎨 <strong>Renk:</strong> ${LUCKY_COLOR[moonSign.element]} (günün Ay burcu ${moonSign.name}'${moonSign.name === 'Aslan' ? 'dan' : 'den'} gelen element enerjisi)</p>
+        <p>💎 <strong>Taş:</strong> ${LUCKY_STONE[moonSign.name]}</p>
+        <p>🔢 <strong>Sayı:</strong> ${luckyNum}</p></div>`;
     
     // Tavsiye
     const advice = score >= 4
-        ? 'Gökyüzü sizi destekliyor: yeni adımlar atmak, görüşmeler yapmak ve fırsatları değerlendirmek için güzel bir gün.'
+        ? 'Gökyüzü sizi destekliyor: yeni adımlar atmak, görüşmeler yapmak ve fırsatları değerlendirmek için güzel bir gün. Destekleyici transit saatlerini aktif kullanın.'
         : score >= 3
-        ? 'Dengeli bir gün: rutin işlerinizi sürdürün, büyük kararları aceleye getirmeyin.'
-        : 'Zorlayıcı enerjiler mevcut: bugün sabırlı olun, çatışmalardan uzak durun ve kendinize zaman ayırın.';
+        ? 'Dengeli bir gün: rutin işlerinizi sürdürün, büyük kararları aceleye getirmeyin. Ay açılarının saatlerine göre gününüzü planlayabilirsiniz.'
+        : 'Zorlayıcı enerjiler mevcut: bugün sabırlı olun, çatışmalardan uzak durun ve kendinize zaman ayırın. Zor açılar geçicidir — yarın başka bir gündür.';
     html += `<div class="r-card red"><h4>💡 Günün Tavsiyesi</h4><p>${advice}</p></div>`;
     
     document.getElementById('daily-content').innerHTML = html;

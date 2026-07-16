@@ -708,6 +708,24 @@ body {
 
 .ev-date { margin-top: 10px; color: #7a5af5; font-size: 12.5px; }
 
+/* Günlük gökyüzü ızgarası */
+.sky-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 6px 12px;
+    margin-bottom: 10px;
+}
+
+.sky-item {
+    font-size: 12.5px;
+    color: #444;
+    background: #faf9ff;
+    border: 1px solid #eee9fb;
+    border-radius: 8px;
+    padding: 5px 9px;
+    white-space: nowrap;
+}
+
 /* ============ TRANSİT TAKVİMİ ============ */
 .t-badge {
     display: inline-block;
